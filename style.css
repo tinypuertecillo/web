@@ -197,6 +197,81 @@ h2 {
     margin-bottom: 2rem;
 }
 
+/* Comodidades */
+.amenity-card {
+    padding: 4rem;
+    border: 1px solid #eee;
+    text-align: center;
+    transition: var(--transition);
+}
+
+.amenity-card:hover {
+    border-color: var(--light-oak);
+    background: var(--bg-light);
+}
+
+.amenity-icon {
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+}
+
+.amenity-card h3 {
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* Lifestyle Section */
+.full-bleed-lifestyle {
+    height: 90vh;
+    background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('POLCURA-BAJADA-BICI.jpg') center/cover fixed;
+    display: flex;
+    align-items: center;
+    padding-left: 10%;
+    color: white;
+}
+
+.lifestyle-content {
+    max-width: 600px;
+}
+
+.lifestyle-content h2 {
+    font-size: 4rem;
+    margin: 2rem 0;
+}
+
+.lifestyle-content p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+    line-height: 1.8;
+}
+
+/* WhatsApp Float */
+.whatsapp-float {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: #25d366;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    transition: var(--transition);
+}
+
+.whatsapp-float:hover {
+    transform: scale(1.1);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.whatsapp-icon {
+    width: 35px;
+    fill: white;
+}
+
 /* Galería de fotos reales */
 .photo-gallery {
     display: grid;
@@ -281,5 +356,14 @@ footer {
 
     .image-box {
         height: 40vh;
+    }
+
+    .full-bleed-lifestyle {
+        padding: 4rem;
+        height: auto;
+    }
+
+    .lifestyle-content h2 {
+        font-size: 2.5rem;
     }
 }
