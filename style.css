@@ -379,34 +379,70 @@ h2 {
 footer {
     background: var(--charcoal);
     color: white;
-    padding: 6rem 0;
+    padding: 8rem 0 4rem 0;
 }
 
-.footer-socials {
-    display: flex;
-    gap: 2rem;
-    align-items: center;
-    margin-top: 2rem;
+.footer-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 4rem;
+    margin-bottom: 6rem;
 }
 
-.footer-socials a {
+.footer-brand p {
+    margin-top: 1.5rem;
     color: var(--ash-gray);
-    text-decoration: none;
-    transition: var(--transition);
+    max-width: 300px;
     font-size: 0.9rem;
 }
 
-.footer-socials a:hover {
+.footer-menu {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+}
+
+.footer-nav-col h4 {
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 0.8rem;
+    margin-bottom: 2rem;
     color: var(--light-oak);
 }
 
+.footer-nav-col a {
+    display: block;
+    color: white;
+    text-decoration: none;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    opacity: 0.7;
+    transition: var(--transition);
+}
+
+.footer-nav-col a:hover {
+    opacity: 1;
+    padding-left: 5px;
+}
+
 .footer-bottom {
-    margin-top: 6rem;
     padding-top: 4rem;
     border-top: 1px solid #444;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    font-size: 0.8rem;
+    color: var(--ash-gray);
+}
+
+.footer-legal {
+    display: flex;
+    gap: 2rem;
+}
+
+.footer-legal a {
+    color: inherit;
+    text-decoration: none;
 }
 
 /* Animaciones */
