@@ -4,206 +4,137 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tiny Puertecillo | Refugio de Bosque</title>
+    <title>Tiny Puertecillo | Habitar el Horizonte</title>
     <meta name="description"
-        content="Arquitectura que respira. Refugios modernos y minimalistas elevados en el bosque de Puertecillo.">
+        content="Despierta sobre las copas de los árboles. Refugios minimalistas en la loma de Puertecillo diseñados para la pausa y el silencio.">
     <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Inter:wght@300;400;600;700&display=swap"
+        rel="stylesheet">
 </head>
 
 <body>
     <header id="header">
         <nav>
-            <div class="logo">Tiny Puertecillo</div>
+            <a href="#" class="logo">Tiny Puertecillo</a>
             <div class="nav-links">
-                <a href="#interior">El Interior</a>
-                <a href="#ubicacion">Ubicación</a>
-                <a href="#calidad">Calidad</a>
-                <a href="#contacto-directo" class="btn-cta">Consulta disponibilidad</a>
+                <a href="#propuesta">La Pausa</a>
+                <a href="#experiencia">Habitar</a>
+                <a href="#entorno">Entorno</a>
             </div>
         </nav>
     </header>
 
     <main>
+        <!-- 1. SECCIÓN HERO (VIDEO PLACEHOLDER) -->
         <section id="hero">
             <div class="hero-content fade-in">
-                <span class="eyebrow">Arquitectura que respira</span>
-                <h1>Refugios en el bosque de Puertecillo.</h1>
+                <span class="eyebrow">Pausa Consciente</span>
+                <h1 class="kinetic-title">Elevado entre pinos,<br>conectado con el mar.</h1>
+                <p class="hero-subtext">Un refugio minimalista en la loma de Puertecillo. Despierta sobre las copas de
+                    los árboles y recupera el ritmo natural.</p>
+                <a href="#propuesta" class="btn-primary">Reservar mi pausa</a>
             </div>
-            <div class="hero-overlay"></div>
+            <!-- Aquí irá el video slow-motion de las copas de los árboles -->
         </section>
 
-        <section id="interior" class="container">
-            <div class="grid-2">
-                <div class="image-box fade-in" id="img-interior"></div>
-                <div class="text-box fade-in-delay">
-                    <span class="subtitle">El Interior</span>
-                    <h2>Atmósfera de confort térmico y visual.</h2>
-                    <p>Nuestros refugios destacan por su materialidad noble. La <strong>Madera Cepillada</strong> y los
-                        <strong>Wall Panels</strong> crean un ambiente cálido que contrasta con el exterior moderno,
-                        asegurando una experiencia sensorial única en medio del bosque.
+        <!-- 2. NUESTRA PROPUESTA -->
+        <section id="propuesta" class="container">
+            <div class="grid-asymmetric">
+                <div class="text-block fade-in">
+                    <span class="subtitle">El lujo de lo esencial</span>
+                    <h2>Menos para sentir más.</h2>
+                    <p>No necesitas más que una buena vista y el aroma a eucalipto. Nuestras tiny houses están diseñadas
+                        para quienes buscan silencio y perspectiva. A solo 15 minutos del surf y la energía de
+                        Puertecillo, pero lo suficientemente alto para que solo escuches el viento entre las ramas.</p>
+                </div>
+                <div class="image-placeholder-organic fade-in-delay">
+                    <span>Espacio para: Interior Tiny House hacia el ventanal</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. LA EXPERIENCIA -->
+        <section id="experiencia" class="container">
+            <span class="subtitle text-center">La Experiencia</span>
+            <h2 class="text-center">Pequeños detalles, grandes pausas.</h2>
+            <div class="experience-grid">
+                <div class="experience-card fade-in">
+                    <span class="card-icon">01</span>
+                    <h3>Vistas de Horizonte</h3>
+                    <p>Tu ventana es un cuadro vivo donde el cielo se funde con las copas de los árboles.</p>
+                </div>
+                <div class="experience-card fade-in">
+                    <span class="card-icon">02</span>
+                    <h3>Refugio Orgánico</h3>
+                    <p>Construcción consciente en madera de pino clara, diseñada para integrarse al cerro sin invadirlo.
                     </p>
                 </div>
-            </div>
-        </section>
-
-        <section id="ubicacion" class="full-bleed">
-            <div class="location-box fade-in">
-                <h2>El silencio de los árboles a solo 10 minutos de la mejor ola de Chile.</h2>
-            </div>
-        </section>
-
-        <section id="calidad" class="container">
-            <div class="grid-3">
-                <div class="feature-card fade-in">
-                    <div class="icon">01</div>
-                    <h3>Eficiencia Térmica</h3>
-                    <p>Diseñadas para mantener el clima ideal usando aislación de alto estándar.</p>
-                </div>
-                <div class="feature-card fade-in">
-                    <div class="icon">02</div>
-                    <h3>Diseño Minimalista</h3>
-                    <p>Líneas rectas y puras que eliminan el ruido visual y celebran la geometría.</p>
-                </div>
-                <div class="feature-card fade-in">
-                    <div class="icon">03</div>
-                    <h3>Privacidad Total</h3>
-                    <p>Estructuras elevadas inmersas en el bosque para un escape sin interrupciones.</p>
+                <div class="experience-card fade-in">
+                    <span class="card-icon">03</span>
+                    <h3>Silencio Estratégico</h3>
+                    <p>La adrenalina de la costa a un paso, y la paz absoluta del bosque al regresar.</p>
                 </div>
             </div>
         </section>
 
-        <section id="comodidades" class="container">
-            <span class="subtitle">Equipamiento Premium</span>
-            <h2>Confort sin concesiones.</h2>
-            <div class="grid-3">
-                <div class="amenity-card fade-in">
-                    <div class="amenity-icon">🛀</div>
-                    <h3>Hot Tub Privado</h3>
-                    <p>Relajación profunda bajo el dosel del bosque, en total privacidad.</p>
+        <!-- 4. LAS CASAS -->
+        <section id="casas" class="container">
+            <div class="grid-asymmetric reverse">
+                <div class="image-placeholder-organic fade-in">
+                    <span>Espacio para: Detalle de Terraza al atardecer</span>
                 </div>
-                <div class="amenity-card fade-in">
-                    <div class="amenity-icon">🛰️</div>
-                    <h3>Starlink Alta Velocidad</h3>
-                    <p>Conexión de fibra óptica satelital, ideal para trabajo remoto y streaming.</p>
-                </div>
-                <div class="amenity-card fade-in">
-                    <div class="amenity-icon">☀️</div>
-                    <h3>Energía Sustentable</h3>
-                    <p>Sistema de paneles solares para un habitar consciente y responsable.</p>
+                <div class="text-block fade-in-delay">
+                    <span class="subtitle">Habitáculo Mínimo</span>
+                    <h2>Un solo ambiente, infinitas sensaciones.</h2>
+                    <p>Espacios optimizados donde la luz natural es la protagonista. Equipadas con lo esencial para la
+                        desconexión: cocina funcional, cama premium y una terraza pensada para contemplar el cerro.</p>
                 </div>
             </div>
         </section>
 
-        <section id="experiencia" class="full-bleed-lifestyle">
-            <div class="lifestyle-content fade-in">
-                <span class="eyebrow">Lifestyle</span>
-                <h2>Más que un refugio, un estilo de vida.</h2>
-                <p>Desde el surf de clase mundial hasta senderos infinitos para bicicleta, Puertecillo es el patio
-                    de juegos para quienes buscan lo extraordinario.</p>
+        <!-- 5. EL ENTORNO -->
+        <section id="entorno" class="full-bleed-bruma">
+            <div class="location-content fade-in">
+                <span class="subtitle" style="color: white; opacity: 0.8;">Ubicación Única</span>
+                <h2>Entre Eucaliptus y Pinos.</h2>
+                <p>Ubicadas en un rincón reservado de la loma, nuestras casas te invitan a recorrer senderos locales,
+                    respirar aire puro de mar y disfrutar de la calma privada.</p>
             </div>
         </section>
 
-        <section id="zona" class="container">
-            <span class="subtitle">El entorno</span>
-            <h2>Vivir Puertecillo.</h2>
-            <div class="photo-gallery">
-                <div class="photo-item fade-in">
-                    <img src="15206003002_Playa_Puertecillo.jpg" alt="Playa Puertecillo">
-                    <p>La mejor ola de Chile</p>
-                </div>
-                <div class="photo-item fade-in-delay">
-                    <img src="Puertecillo-caballos-1.webp" alt="Caballos en la playa">
-                    <p>Conexión natural</p>
-                </div>
-                <div class="photo-item fade-in">
-                    <img src="POLCURA-BAJADA-BICI.jpg" alt="Bajada Polcura">
-                    <p>Aventura en los senderos</p>
-                </div>
-                <div class="photo-item fade-in-delay">
-                    <img src="conoce-este-magnifico-lugar-donde-el-mar-es-el-protagonista-foto-shutterstock.webp"
-                        alt="Vistas de la zona">
-                    <p>Horizontes infinitos</p>
-                </div>
-            </div>
-        </section>
-
-        <section id="contacto-directo" class="container">
-            <div class="grid-2">
-                <div class="contact-form-box fade-in">
-                    <span class="subtitle">Contacto</span>
-                    <h2>¿Listo para habitar el bosque?</h2>
-                    <form class="pro-form">
-                        <div class="form-group">
-                            <label>Nombre</label>
-                            <input type="text" placeholder="Tu nombre" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Email</label>
-                            <input type="email" placeholder="tu@email.com" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Mensaje</label>
-                            <textarea placeholder="Cuéntanos en qué fechas te gustaría visitarnos" rows="4"></textarea>
-                        </div>
-                        <button type="submit" class="btn-submit">Enviar consulta</button>
-                    </form>
-                </div>
-                <div class="map-box fade-in-delay">
-                    <iframe
-                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d11342.348651811!2d-72.016!3d-34.368!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x9663d9943615e515%3A0xe549551f33510e0e!2sPuertecillo%2C%20Navidad%2C%20O'Higgins!5e0!3m2!1ses!2scl!4v1705600000000!5m2!1ses!2scl"
-                        width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy">
-                    </iframe>
-                </div>
+        <!-- 6. CIERRE -->
+        <section class="container text-center">
+            <div class="fade-in">
+                <h2 style="margin-bottom: 3rem;">¿Listo para cambiar el ruido por el susurro de los árboles?</h2>
+                <a href="#" class="btn-primary">Ver Disponibilidad</a>
             </div>
         </section>
     </main>
 
-    <a href="https://wa.me/569XXXXXXXX" class="whatsapp-float" target="_blank" id="whatsapp-link">
-        <svg viewBox="0 0 32 32" class="whatsapp-icon">
-            <path
-                d="M16 0c-8.837 0-16 7.163-16 16 0 2.825 0.733 5.476 2.016 7.787l-2.016 7.213 7.373-1.933c2.253 1.189 4.819 1.867 7.544 1.867 8.837 0 16-7.163 16-16s-7.163-16-16-16zM16 29.213c-2.459 0-4.757-0.64-6.755-1.76l-0.485-0.272-4.48 1.173 1.192-4.267-0.299-0.472c-1.296-2.048-2.043-4.469-2.043-7.067 0-7.315 5.947-13.264 13.264-13.264 7.315 0 13.264 5.949 13.264 13.264s-5.949 13.264-13.264 13.264zM24.085 19.981c-0.44-0.221-2.603-1.285-3.005-1.432-0.403-0.147-0.696-0.221-0.989 0.221s-1.139 1.432-1.396 1.725c-0.257 0.293-0.512 0.331-0.952 0.11-0.44-0.221-1.859-0.685-3.541-2.184-1.309-1.168-2.192-2.608-2.448-3.048s-0.027-0.677 0.193-0.896c0.199-0.199 0.44-0.512 0.659-0.768 0.221-0.257 0.293-0.44 0.44-0.733s0.073-0.55-0.036-0.768c-0.11-0.221-0.989-2.384-1.357-3.264-0.357-0.856-0.724-0.741-0.989-0.755-0.257-0.013-0.55-0.016-0.843-0.016s-0.768 0.11-1.173 0.55c-0.403 0.44-1.541 1.504-1.541 3.667s1.579 4.256 1.8 4.549c0.221 0.293 3.107 4.744 7.528 6.648 1.051 0.453 1.872 0.723 2.512 0.925 1.056 0.336 2.019 0.288 2.779 0.176 0.843-0.125 2.603-1.064 2.968-2.091 0.368-1.027 0.368-1.907 0.257-2.091s-0.403-0.331-0.843-0.55z">
-            </path>
-        </svg>
-    </a>
+    <!-- UX Reserva Flotante (2026 Trend) -->
+    <a href="#" class="floating-booking">Reservar Ahora</a>
 
-    <footer id="footer-main">
+    <footer>
         <div class="container">
             <div class="footer-grid">
                 <div class="footer-brand">
                     <span class="logo">Tiny Puertecillo</span>
-                    <p>Arquitectura que respira en la zona más exclusiva de la Región de O'Higgins.</p>
+                    <p>Un refugio diseñado para habitar el silencio.</p>
                 </div>
                 <div class="footer-menu">
                     <div class="footer-nav-col">
-                        <h4>Explora</h4>
+                        <h4>Menú</h4>
                         <a href="#hero">Inicio</a>
-                        <a href="#interior">Interiores</a>
-                        <a href="#ubicacion">El Entorno</a>
-                        <a href="#calidad">Calidad</a>
-                    </div>
-                    <div class="footer-nav-col">
-                        <h4>Experiencia</h4>
-                        <a href="#comodidades">Amenities</a>
-                        <a href="#experiencia">Lifestyle</a>
-                        <a href="#zona">Galería</a>
-                    </div>
-                    <div class="footer-nav-col">
-                        <h4>Contacto</h4>
-                        <a href="mailto:hola@tinypuertecillo.cl">Email</a>
-                        <a href="https://wa.me/569XXXXXXXX">WhatsApp</a>
-                        <a href="#">Instagram</a>
+                        <a href="#propuesta">Propuesta</a>
+                        <a href="#experiencia">Habitar</a>
                     </div>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; 2026 Tiny Puertecillo. Todos los derechos reservados.</p>
-                <div class="footer-legal">
-                    <a href="#">Privacidad</a>
-                    <a href="#">Cookies</a>
-                </div>
+                <p>&copy; 2026 Tiny Puertecillo. Arquitectura que respira.</p>
             </div>
         </div>
     </footer>
