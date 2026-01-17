@@ -13,7 +13,6 @@
     padding: 0;
     box-sizing: border-box;
     border-radius: 0 !important;
-    /* FORZAR BORDES RECTOS */
 }
 
 html {
@@ -122,7 +121,7 @@ header nav {
     z-index: 2;
 }
 
-/* Grillas Geométricas */
+/* Sections */
 section {
     padding: 12rem 0;
 }
@@ -197,7 +196,7 @@ h2 {
     margin-bottom: 2rem;
 }
 
-/* Comodidades */
+/* Amenities */
 .amenity-card {
     padding: 4rem;
     border: 1px solid #eee;
@@ -247,32 +246,7 @@ h2 {
     line-height: 1.8;
 }
 
-/* WhatsApp Float */
-.whatsapp-float {
-    position: fixed;
-    bottom: 2rem;
-    right: 2rem;
-    background: #25d366;
-    width: 60px;
-    height: 60px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    transition: var(--transition);
-}
-
-.whatsapp-float:hover {
-    transform: scale(1.1);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-}
-
-.whatsapp-icon {
-    width: 35px;
-    fill: white;
-}
-
-/* Galería de fotos reales */
+/* Galeria */
 .photo-gallery {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -309,7 +283,7 @@ h2 {
 
 /* Contacto y Mapa */
 #contacto-directo {
-    padding: 10rem 0;
+    padding: 10rem 4rem;
 }
 
 .pro-form {
@@ -358,6 +332,7 @@ h2 {
     cursor: pointer;
     border: none;
     transition: var(--transition);
+    text-align: center;
 }
 
 .btn-submit:hover {
@@ -375,7 +350,32 @@ h2 {
     filter: grayscale(0);
 }
 
-/* Footer Corregido */
+/* WhatsApp Float */
+.whatsapp-float {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: #25d366;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    transition: var(--transition);
+}
+
+.whatsapp-float:hover {
+    transform: scale(1.1);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.whatsapp-icon {
+    width: 35px;
+    fill: white;
+}
+
+/* Footer */
 footer {
     background: var(--charcoal);
     color: white;
@@ -410,13 +410,19 @@ footer {
 }
 
 /* Animaciones */
-.fade-in {
+.fade-in,
+.fade-in-delay {
     opacity: 0;
     transform: translateY(20px);
     transition: all 1.2s cubic-bezier(0.19, 1, 0.22, 1);
 }
 
-.fade-in.visible {
+.fade-in-delay {
+    transition-delay: 0.3s;
+}
+
+.fade-in.visible,
+.fade-in-delay.visible {
     opacity: 1;
     transform: translateY(0);
 }
@@ -442,5 +448,13 @@ footer {
 
     .lifestyle-content h2 {
         font-size: 2.5rem;
+    }
+
+    .map-box {
+        height: 400px;
+    }
+
+    .container {
+        padding: 0 2rem;
     }
 }
