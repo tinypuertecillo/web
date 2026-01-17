@@ -89,7 +89,7 @@ header nav {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: url('assets/3-BAJADAS-A-PUERTE-OK.jpg') no-repeat center center/cover;
+    background: url('3-BAJADAS-A-PUERTE-OK.jpg') no-repeat center center/cover;
     position: relative;
     color: white;
     text-align: center;
@@ -136,7 +136,7 @@ section {
 
 .image-box {
     height: 70vh;
-    background: url('assets/interior.png') center/cover;
+    background: url('9-scaled.webp') center/cover;
     border: 1px solid var(--ash-gray);
 }
 
@@ -159,7 +159,7 @@ h2 {
 /* Full Bleed Image / Location */
 .full-bleed {
     height: 80vh;
-    background: url('assets/privacy.png') center/cover fixed;
+    background: url('Destino-Costa-Viva.jpg') center/cover fixed;
     display: flex;
     align-items: center;
     justify-content: center;
