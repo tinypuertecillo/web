@@ -307,29 +307,106 @@ h2 {
     color: var(--ash-gray);
 }
 
-/* Footer */
-footer {
-    background: var(--charcoal);
-    color: white;
+/* Contacto y Mapa */
+#contacto-directo {
     padding: 10rem 0;
 }
 
-.footer-cta {
-    margin-bottom: 6rem;
+.pro-form {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    margin-top: 3rem;
 }
 
-.btn-large {
-    font-size: 1.5rem;
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.form-group label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 600;
+}
+
+.form-group input,
+.form-group textarea {
+    padding: 1.2rem;
+    background: var(--bg-light);
+    border: 1px solid #ddd;
+    outline: none;
+    transition: var(--transition);
+    font-family: inherit;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    border-color: var(--light-oak);
+    background: var(--white);
+}
+
+.btn-submit {
+    background: var(--charcoal);
     color: white;
-    text-decoration: none;
-    border-bottom: 2px solid var(--light-oak);
-    padding-bottom: 1rem;
-    display: inline-block;
+    padding: 1.5rem;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
     transition: var(--transition);
 }
 
-.btn-large:hover {
+.btn-submit:hover {
+    background: var(--light-oak);
+}
+
+.map-box {
+    height: 600px;
+    border: 1px solid var(--ash-gray);
+    filter: grayscale(1);
+    transition: var(--transition);
+}
+
+.map-box:hover {
+    filter: grayscale(0);
+}
+
+/* Footer Corregido */
+footer {
+    background: var(--charcoal);
+    color: white;
+    padding: 6rem 0;
+}
+
+.footer-socials {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+    margin-top: 2rem;
+}
+
+.footer-socials a {
+    color: var(--ash-gray);
+    text-decoration: none;
+    transition: var(--transition);
+    font-size: 0.9rem;
+}
+
+.footer-socials a:hover {
     color: var(--light-oak);
+}
+
+.footer-bottom {
+    margin-top: 6rem;
+    padding-top: 4rem;
+    border-top: 1px solid #444;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 /* Animaciones */
