@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+@theme inline {
+  /* Verde Arboles / Verde */
+  --color-primary: #2b4c3f;
+  --color-primary-container: #446b54;
+  --color-on-primary-container: #d2e3d8;
+  
+  /* Azul Cielo / Azul */
+  --color-primary-fixed-dim: #8cb8d9;
+  --color-surface-tint: #2c5282;
+
+  /* Madera color miel / Madera */
+  --color-secondary: #d2903e;
+  --color-secondary-fixed: #fae2c1;
+  --color-on-secondary-fixed: #4a2c08;
+
+  /* Superficies Neutras y Negro */
+  --color-surface: #faf7f2;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f5f0e6;
+  --color-surface-container: #eee7da;
+  --color-surface-container-high: #e5dbcd;
+  --color-surface-container-highest: #dcd0bf;
+  --color-surface-variant: #dcd0bf;
+  
+  --color-on-surface: #111111;
+  --color-on-surface-variant: #3a3a3a;
+  --color-on-primary: #ffffff;
+  --color-outline-variant: #b0c4de;
+
+  --font-sans: var(--font-manrope);
+  --font-serif: var(--font-noto-serif);
+  --font-body: var(--font-manrope);
+  --font-label: var(--font-manrope);
+}
+
+body {
+  background: var(--color-surface);
+  color: var(--color-on-surface);
+}
