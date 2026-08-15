@@ -33,9 +33,9 @@
           "mSpan": "48x18",
           "zIndex": 1,
           "borderRadius": "12px",
-          "image": "https://xqybckftzuupkmbwocrj.supabase.co/storage/v1/object/public/grilla/los_pimientos.jpg",
+          "image": "/storage/xqybckftzuupkmbwocrj/grilla/los_pimientos.jpg",
           "gallery": [
-            "https://xqybckftzuupkmbwocrj.supabase.co/storage/v1/object/public/grilla/los_pimientos.jpg"
+            "/storage/xqybckftzuupkmbwocrj/grilla/los_pimientos.jpg"
           ]
         },
         {
@@ -264,9 +264,9 @@
           "mSpan": "48x15",
           "zIndex": 1,
           "borderRadius": "12px",
-          "image": "https://xqybckftzuupkmbwocrj.supabase.co/storage/v1/object/public/grilla/INSUMO-1783721460212-0.webp",
+          "image": "/storage/xqybckftzuupkmbwocrj/grilla/INSUMO-1783721460212-0.webp",
           "gallery": [
-            "https://xqybckftzuupkmbwocrj.supabase.co/storage/v1/object/public/grilla/INSUMO-1783721460212-0.webp"
+            "/storage/xqybckftzuupkmbwocrj/grilla/INSUMO-1783721460212-0.webp"
           ]
         },
         {
@@ -397,9 +397,9 @@
           "zIndex": 1,
           "borderRadius": "12px",
           "bgColor": "#b79c8a",
-          "image": "https://xqybckftzuupkmbwocrj.supabase.co/storage/v1/object/public/grilla/INSUMO-1783886578043-0.webp",
+          "image": "/storage/xqybckftzuupkmbwocrj/grilla/INSUMO-1783886578043-0.webp",
           "gallery": [
-            "https://xqybckftzuupkmbwocrj.supabase.co/storage/v1/object/public/grilla/INSUMO-1783886578043-0.webp"
+            "/storage/xqybckftzuupkmbwocrj/grilla/INSUMO-1783886578043-0.webp"
           ]
         },
         {
@@ -418,9 +418,9 @@
           "zIndex": 1,
           "borderRadius": "12px",
           "bgColor": "#b79c8a",
-          "image": "https://xqybckftzuupkmbwocrj.supabase.co/storage/v1/object/public/grilla/INSUMO-1783889773131-0.webp",
+          "image": "/storage/xqybckftzuupkmbwocrj/grilla/INSUMO-1783889773131-0.webp",
           "gallery": [
-            "https://xqybckftzuupkmbwocrj.supabase.co/storage/v1/object/public/grilla/INSUMO-1783889773131-0.webp"
+            "/storage/xqybckftzuupkmbwocrj/grilla/INSUMO-1783889773131-0.webp"
           ]
         },
         {
@@ -439,9 +439,9 @@
           "zIndex": 1,
           "borderRadius": "12px",
           "bgColor": "#b79c8a",
-          "image": "https://xqybckftzuupkmbwocrj.supabase.co/storage/v1/object/public/grilla/INSUMO-1783886297075-0.webp",
+          "image": "/storage/xqybckftzuupkmbwocrj/grilla/INSUMO-1783886297075-0.webp",
           "gallery": [
-            "https://xqybckftzuupkmbwocrj.supabase.co/storage/v1/object/public/grilla/INSUMO-1783886297075-0.webp"
+            "/storage/xqybckftzuupkmbwocrj/grilla/INSUMO-1783886297075-0.webp"
           ]
         },
         {
@@ -460,9 +460,9 @@
           "zIndex": 1,
           "borderRadius": "12px",
           "bgColor": "#b79c8a",
-          "image": "https://xqybckftzuupkmbwocrj.supabase.co/storage/v1/object/public/grilla/INSUMO-1783890743723-0.webp",
+          "image": "/storage/xqybckftzuupkmbwocrj/grilla/INSUMO-1783890743723-0.webp",
           "gallery": [
-            "https://xqybckftzuupkmbwocrj.supabase.co/storage/v1/object/public/grilla/INSUMO-1783890743723-0.webp"
+            "/storage/xqybckftzuupkmbwocrj/grilla/INSUMO-1783890743723-0.webp"
           ]
         },
         {
