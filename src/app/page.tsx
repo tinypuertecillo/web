@@ -293,7 +293,7 @@ export default function Home() {
 
         {/* Grilla Infinita Section */}
         <section id="lienzo" className="py-24" style={{ backgroundColor: masterSection?.bgColor || 'transparent' }}>
-          <div className="max-w-7xl mx-auto px-4 md:px-8">
+          <div className="w-full max-w-none px-4 md:px-8">
             <div
               className="bento-grid-mobile"
               style={{
