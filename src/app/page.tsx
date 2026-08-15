@@ -320,7 +320,11 @@ export default function Home() {
       <footer id="contacto" className="w-full py-16 px-8 bg-[#f3ede4] dark:bg-[#163428] border-t border-outline-variant/10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-7xl mx-auto w-full">
           <div className="space-y-6">
-            <p className="text-lg font-serif italic text-[#163428] dark:text-[#f9f3ea]">Tiny Puertecillo</p>
+            <img 
+              src="https://xqybckftzuupkmbwocrj.supabase.co/storage/v1/object/public/logo/logo_negro_clean.png" 
+              alt="Tiny Puertecillo Logo" 
+              className="h-16 w-auto object-contain dark:invert"
+            />
             <p className="text-[#1d1b16] dark:text-[#f9f3ea] font-label text-sm opacity-70">
               Experiencias arquitectónicas en el borde costero chileno.
             </p>

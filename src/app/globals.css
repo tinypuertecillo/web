@@ -3,8 +3,9 @@
 @theme inline {
   /* Verde Arboles / Verde */
   --color-primary: #2b4c3f;
-  --color-primary-container: #446b54;
-  --color-on-primary-container: #d2e3d8;
+  --color-primary-container: #00d4bd;
+  --color-on-primary-container: #001f14;
+  --color-on-primary: #001f14;
   
   /* Azul Cielo / Azul */
   --color-primary-fixed-dim: #8cb8d9;
