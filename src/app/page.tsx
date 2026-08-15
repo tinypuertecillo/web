@@ -219,8 +219,8 @@ export default function Home() {
       <nav className="fixed top-0 w-full z-50 bg-[#fff9ef]/80 dark:bg-[#1d1b16]/80 backdrop-blur-xl border-b border-outline-variant/10 transition-all duration-300">
         <div className="flex justify-between items-center max-w-7xl mx-auto px-8 py-6 w-full">
           <a className="hover:opacity-80 transition-all duration-300 block" href="#">
-            <img src="/logo_negro.png" alt="Tiny Puertecillo" className="h-14 w-auto block dark:hidden" />
-            <img src="/logo_blanco.png" alt="Tiny Puertecillo" className="h-14 w-auto hidden dark:block" />
+            <img src="/logo/logo_negro.png" alt="Tiny Puertecillo" className="h-14 w-auto block dark:hidden" />
+            <img src="/logo/logo_blanco.png" alt="Tiny Puertecillo" className="h-14 w-auto hidden dark:block" />
           </a>
           <div className="hidden md:flex items-center space-x-10">
             <a className="text-[#163428] dark:text-[#fff9ef] border-b-2 border-[#964828] pb-1 font-label text-sm tracking-wide" href="#">Inicio</a>
