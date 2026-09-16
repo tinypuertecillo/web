@@ -206,12 +206,12 @@ const BentoBlock = ({ block, previewMode, onOpenGallery }: { block: any; preview
                     href={block.buttonLink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-block text-center bg-primary-container text-on-primary px-8 py-3 rounded-DEFAULT font-label font-semibold tracking-wide hover:opacity-90 transition-all shadow-md"
+                    className="inline-block text-center bg-primary-container text-on-primary px-8 py-3.5 rounded-full font-label font-semibold tracking-wide hover:opacity-90 active:scale-[0.98] transition-all shadow-md"
                   >
                     {block.buttonText}
                   </a>
                 ) : (
-                  <button className="bg-primary-container text-on-primary px-8 py-3 rounded-DEFAULT font-label font-semibold tracking-wide hover:opacity-90 transition-all shadow-md">
+                  <button className="bg-primary-container text-on-primary px-8 py-3.5 rounded-full font-label font-semibold tracking-wide hover:opacity-90 active:scale-[0.98] transition-all shadow-md">
                     {block.buttonText}
                   </button>
                 )}
@@ -220,9 +220,9 @@ const BentoBlock = ({ block, previewMode, onOpenGallery }: { block: any; preview
                     href={block.buttonLink2}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="secondary-cta-btn inline-block text-center px-8 py-3 rounded-DEFAULT font-label font-semibold tracking-wide transition-all"
+                    className="secondary-cta-btn inline-block text-center px-8 py-3.5 rounded-full font-label font-semibold tracking-wide transition-all active:scale-[0.98]"
                     style={{
-                      border: `2px solid ${block.textColor || '#163428'}`,
+                      border: `1.5px solid ${block.textColor || '#163428'}66`,
                       color: block.textColor || '#163428',
                       '--secondary-cta-bg': block.textColor || '#163428',
                       '--secondary-cta-fg': block.bgColor || '#fff9ef'
@@ -470,12 +470,12 @@ const BentoBlock = ({ block, previewMode, onOpenGallery }: { block: any; preview
                   href={block.buttonLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block bg-primary-container text-on-primary px-8 py-3 rounded-DEFAULT font-label font-semibold tracking-wide hover:opacity-90 transition-all shadow-md"
+                  className="inline-block bg-primary-container text-on-primary px-8 py-3.5 rounded-full font-label font-semibold tracking-wide hover:opacity-90 active:scale-[0.98] transition-all shadow-md"
                 >
                   {block.buttonText}
                 </a>
               ) : (
-                <button className="bg-primary-container text-on-primary px-8 py-3 rounded-DEFAULT font-label font-semibold tracking-wide hover:opacity-90 transition-all shadow-md">
+                <button className="bg-primary-container text-on-primary px-8 py-3.5 rounded-full font-label font-semibold tracking-wide hover:opacity-90 active:scale-[0.98] transition-all shadow-md">
                   {block.buttonText}
                 </button>
               )}
@@ -484,9 +484,9 @@ const BentoBlock = ({ block, previewMode, onOpenGallery }: { block: any; preview
                   href={block.buttonLink2}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="secondary-cta-btn inline-block px-8 py-3 rounded-DEFAULT font-label font-semibold tracking-wide transition-all"
+                  className="secondary-cta-btn inline-block px-8 py-3.5 rounded-full font-label font-semibold tracking-wide transition-all active:scale-[0.98]"
                   style={{
-                    border: `2px solid ${block.textColor || '#163428'}`,
+                    border: `1.5px solid ${block.textColor || '#163428'}66`,
                     color: block.textColor || '#163428',
                     '--secondary-cta-bg': block.textColor || '#163428',
                     '--secondary-cta-fg': block.bgColor || '#fff9ef'
@@ -572,24 +572,24 @@ export default function Home() {
       />
 
       {/* TopNavBar */}
-      <nav className="fixed top-0 w-full z-50 bg-[#fff9ef]/80 dark:bg-[#1d1b16]/80 backdrop-blur-xl border-b border-outline-variant/10 transition-all duration-300">
-        <div className="flex justify-between items-center max-w-7xl mx-auto px-5 md:px-8 py-3 md:py-4 w-full">
-          <a className="hover:opacity-80 transition-all duration-300 block shrink-0" href="#">
-            <img src="/logo/logo_negro.png" alt="Tiny Puertecillo" className="h-12 md:h-16 w-auto block dark:hidden" />
-            <img src="/logo/logo_blanco.png" alt="Tiny Puertecillo" className="h-12 md:h-16 w-auto hidden dark:block" />
+      <nav className="fixed top-0 w-full z-50 bg-[#fff9ef]/85 dark:bg-[#1d1b16]/85 backdrop-blur-xl border-b border-outline-variant/10 transition-all duration-300">
+        <div className="flex justify-between items-center max-w-7xl mx-auto px-5 md:px-8 py-2 md:py-3 w-full">
+          <a className="hover:opacity-80 transition-all duration-300 block shrink-0 -my-1" href="#">
+            <img src="/logo/logo_negro.png" alt="Tiny Puertecillo" className="h-14 md:h-20 w-auto block dark:hidden" />
+            <img src="/logo/logo_blanco.png" alt="Tiny Puertecillo" className="h-14 md:h-20 w-auto hidden dark:block" />
           </a>
           <div className="hidden md:flex items-center space-x-10">
             <a className="text-[#163428] dark:text-[#fff9ef] border-b-2 border-[#964828] pb-1 font-label text-sm tracking-wide" href="#">Inicio</a>
             <a className="text-[#1d1b16]/70 dark:text-[#f3ede4]/70 hover:text-[#163428] dark:hover:text-[#fff9ef] transition-colors font-label text-sm tracking-wide pb-1 border-b-2 border-transparent hover:border-[#964828]/50" href="#lienzo">Las Tiny</a>
             <a className="text-[#1d1b16]/70 dark:text-[#f3ede4]/70 hover:text-[#163428] dark:hover:text-[#fff9ef] transition-colors font-label text-sm tracking-wide pb-1 border-b-2 border-transparent hover:border-[#964828]/50" href="#contacto">Contacto</a>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="hidden md:flex items-center gap-3">
+          <div className="flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-1 rounded-full border border-[#163428]/15 dark:border-[#fff9ef]/20 bg-white/50 dark:bg-white/5 p-1">
               <a
                 href={AIRBNB_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="bg-primary-container text-on-primary px-5 lg:px-6 py-2.5 rounded-DEFAULT font-label font-semibold tracking-wide text-sm hover:opacity-90 transition-all inline-block whitespace-nowrap"
+                className="bg-primary-container text-on-primary px-5 lg:px-6 py-2.5 rounded-full font-label font-semibold tracking-wide text-sm hover:opacity-90 active:scale-[0.97] transition-all inline-block whitespace-nowrap shadow-sm"
               >
                 Airbnb
               </a>
@@ -597,7 +597,7 @@ export default function Home() {
                 href={BOOKING_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="border-2 border-[#163428] dark:border-[#fff9ef] text-[#163428] dark:text-[#fff9ef] px-5 lg:px-6 py-2 rounded-DEFAULT font-label font-semibold tracking-wide text-sm hover:bg-[#163428] hover:text-white dark:hover:bg-[#fff9ef] dark:hover:text-[#163428] transition-all inline-block whitespace-nowrap"
+                className="text-[#163428] dark:text-[#fff9ef] px-5 lg:px-6 py-2.5 rounded-full font-label font-semibold tracking-wide text-sm hover:bg-[#163428]/8 dark:hover:bg-[#fff9ef]/10 active:scale-[0.97] transition-all inline-block whitespace-nowrap"
               >
                 Booking.com
               </a>
@@ -622,12 +622,12 @@ export default function Home() {
               className="md:hidden overflow-hidden bg-[#fff9ef] dark:bg-[#1d1b16] border-t border-outline-variant/10"
             >
               <div className="flex flex-col px-5 py-5 gap-5">
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-2.5">
                   <a
                     href={AIRBNB_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="bg-primary-container text-on-primary text-center px-6 py-3 rounded-DEFAULT font-label font-semibold tracking-wide text-sm hover:opacity-90 transition-all"
+                    className="bg-primary-container text-on-primary text-center px-6 py-3.5 rounded-full font-label font-semibold tracking-wide text-sm hover:opacity-90 active:scale-[0.98] transition-all shadow-sm"
                   >
                     Reservar en Airbnb
                   </a>
@@ -635,7 +635,7 @@ export default function Home() {
                     href={BOOKING_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="border-2 border-[#163428] dark:border-[#fff9ef] text-[#163428] dark:text-[#fff9ef] text-center px-6 py-3 rounded-DEFAULT font-label font-semibold tracking-wide text-sm hover:bg-[#163428] hover:text-white dark:hover:bg-[#fff9ef] dark:hover:text-[#163428] transition-all"
+                    className="border-[1.5px] border-[#163428]/40 dark:border-[#fff9ef]/40 text-[#163428] dark:text-[#fff9ef] text-center px-6 py-3.5 rounded-full font-label font-semibold tracking-wide text-sm hover:bg-[#163428]/8 dark:hover:bg-[#fff9ef]/10 active:scale-[0.98] transition-all"
                   >
                     Reservar en Booking.com
                   </a>
@@ -742,30 +742,73 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer id="contacto" className="w-full pt-16 pb-8 px-8 bg-[#f3ede4] dark:bg-[#163428] border-t border-outline-variant/10">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-7xl mx-auto w-full items-start text-center md:text-left">
-          <div className="flex flex-col items-center md:items-start gap-5">
+      <footer id="contacto" className="relative w-full pt-20 pb-10 px-8 bg-[#f3ede4] dark:bg-[#163428] overflow-hidden">
+        <div
+          className="absolute top-0 left-0 right-0 h-[3px]"
+          style={{ background: 'linear-gradient(90deg, #964828, #163428, #964828)' }}
+        />
+        <div
+          className="pointer-events-none absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-[0.06] dark:opacity-[0.08]"
+          style={{ background: 'radial-gradient(circle, #964828, transparent 70%)' }}
+        />
+        <div className="relative grid grid-cols-1 md:grid-cols-[1.4fr_1fr_1fr] gap-14 md:gap-10 max-w-7xl mx-auto w-full items-start text-center md:text-left">
+          <div className="flex flex-col items-center md:items-start gap-6">
             <img
               src="/logo/logo_negro_clean.png"
               alt="Tiny Puertecillo Logo"
-              className="h-20 w-auto object-contain dark:invert"
+              className="h-28 w-auto object-contain dark:invert -ml-1"
             />
-            <p className="text-[#1d1b16] dark:text-[#f9f3ea] font-label text-sm opacity-70 max-w-xs leading-relaxed">
-              Experiencias arquitectónicas en el borde costero chileno.
+            <p className="text-[#1d1b16] dark:text-[#f9f3ea] font-body text-[15px] opacity-70 max-w-xs leading-relaxed">
+              Experiencias arquitectónicas en el borde costero chileno, entre el bosque y el mar.
             </p>
+            <div className="hidden md:flex items-center gap-1 rounded-full border border-[#163428]/15 dark:border-[#fff9ef]/20 bg-white/40 dark:bg-white/5 p-1">
+              <a
+                href={AIRBNB_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-primary-container text-on-primary px-5 py-2 rounded-full font-label font-semibold tracking-wide text-xs hover:opacity-90 active:scale-[0.97] transition-all"
+              >
+                Airbnb
+              </a>
+              <a
+                href={BOOKING_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#163428] dark:text-[#fff9ef] px-5 py-2 rounded-full font-label font-semibold tracking-wide text-xs hover:bg-[#163428]/8 dark:hover:bg-[#fff9ef]/10 active:scale-[0.97] transition-all"
+              >
+                Booking.com
+              </a>
+            </div>
           </div>
-          <div className="flex flex-col items-center md:items-end gap-4">
-            <p className="font-label text-xs uppercase tracking-widest text-[#163428] dark:text-[#f9f3ea] opacity-80">Legal &amp; Social</p>
-            <div className="flex flex-wrap justify-center md:justify-end gap-x-8 gap-y-3">
-              <a className="text-[#1d1b16] dark:text-[#f9f3ea] opacity-70 hover:opacity-100 hover:text-[#964828] dark:hover:text-[#fff9ef] transition-all underline decoration-[#964828]/50 underline-offset-4 font-label text-sm" href="#">Privacidad</a>
-              <a className="text-[#1d1b16] dark:text-[#f9f3ea] opacity-70 hover:opacity-100 hover:text-[#964828] dark:hover:text-[#fff9ef] transition-all underline decoration-[#964828]/50 underline-offset-4 font-label text-sm" href="#">Términos</a>
-              <a className="text-[#1d1b16] dark:text-[#f9f3ea] opacity-70 hover:opacity-100 hover:text-[#964828] dark:hover:text-[#fff9ef] transition-all underline decoration-[#964828]/50 underline-offset-4 font-label text-sm" href="#">Sustentabilidad</a>
+          <div className="flex flex-col items-center md:items-start gap-4">
+            <p className="font-label text-xs uppercase tracking-widest text-[#964828] font-bold">Navegación</p>
+            <div className="flex flex-col items-center md:items-start gap-3">
+              <a className="text-[#1d1b16] dark:text-[#f9f3ea] opacity-75 hover:opacity-100 hover:text-[#964828] dark:hover:text-[#fff9ef] transition-all font-label text-sm" href="#">Inicio</a>
+              <a className="text-[#1d1b16] dark:text-[#f9f3ea] opacity-75 hover:opacity-100 hover:text-[#964828] dark:hover:text-[#fff9ef] transition-all font-label text-sm" href="#lienzo">Las Tiny</a>
+              <a className="text-[#1d1b16] dark:text-[#f9f3ea] opacity-75 hover:opacity-100 hover:text-[#964828] dark:hover:text-[#fff9ef] transition-all font-label text-sm" href="#contacto">Contacto</a>
+            </div>
+          </div>
+          <div className="flex flex-col items-center md:items-start gap-4">
+            <p className="font-label text-xs uppercase tracking-widest text-[#964828] font-bold">Legal &amp; Social</p>
+            <div className="flex flex-col items-center md:items-start gap-3">
+              <a className="text-[#1d1b16] dark:text-[#f9f3ea] opacity-75 hover:opacity-100 hover:text-[#964828] dark:hover:text-[#fff9ef] transition-all font-label text-sm" href="#">Privacidad</a>
+              <a className="text-[#1d1b16] dark:text-[#f9f3ea] opacity-75 hover:opacity-100 hover:text-[#964828] dark:hover:text-[#fff9ef] transition-all font-label text-sm" href="#">Términos</a>
+              <a className="text-[#1d1b16] dark:text-[#f9f3ea] opacity-75 hover:opacity-100 hover:text-[#964828] dark:hover:text-[#fff9ef] transition-all font-label text-sm" href="#">Sustentabilidad</a>
             </div>
           </div>
         </div>
-        <div className="max-w-7xl mx-auto w-full mt-12 pt-6 border-t border-[#1d1b16]/10 dark:border-[#f9f3ea]/10">
-          <p className="text-xs font-label tracking-widest text-[#1d1b16] dark:text-[#f9f3ea] opacity-50 text-center uppercase">
-            © 2026 Tiny Puertecillo SpA. Architectural Retreats.
+        <div className="relative flex md:hidden justify-center mt-10">
+          <div className="flex items-center gap-1 rounded-full border border-[#163428]/15 dark:border-[#fff9ef]/20 bg-white/40 dark:bg-white/5 p-1">
+            <a href={AIRBNB_URL} target="_blank" rel="noopener noreferrer" className="bg-primary-container text-on-primary px-5 py-2 rounded-full font-label font-semibold tracking-wide text-xs">Airbnb</a>
+            <a href={BOOKING_URL} target="_blank" rel="noopener noreferrer" className="text-[#163428] dark:text-[#fff9ef] px-5 py-2 rounded-full font-label font-semibold tracking-wide text-xs">Booking.com</a>
+          </div>
+        </div>
+        <div className="relative max-w-7xl mx-auto w-full mt-14 pt-6 border-t border-[#1d1b16]/10 dark:border-[#f9f3ea]/10 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-xs font-label tracking-widest text-[#1d1b16] dark:text-[#f9f3ea] opacity-50 uppercase">
+            © 2026 Tiny Puertecillo SpA
+          </p>
+          <p className="text-xs font-label tracking-widest text-[#1d1b16] dark:text-[#f9f3ea] opacity-50 uppercase">
+            Architectural Retreats · Puertecillo, Chile
           </p>
         </div>
       </footer>
