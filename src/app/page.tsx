@@ -2,10 +2,10 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion';
-import { Layers, MapPin, Calendar, Compass, Shield, Wind, Flame, Coffee, Menu, X } from 'lucide-react';
+import { Layers, MapPin, Calendar, Compass, Shield, Wind, Flame, Coffee, Menu, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import contentData from '../../web_content_sync.json';
 
-const BentoBlock = ({ block, previewMode }: { block: any; previewMode?: string }) => {
+const BentoBlock = ({ block, previewMode, onOpenGallery }: { block: any; previewMode?: string; onOpenGallery?: (images: string[], index: number) => void }) => {
   const currentMode = previewMode || 'desktop';
   let finalCol = block.col || 1;
   let finalRow = block.row || 1;
@@ -38,6 +38,9 @@ const BentoBlock = ({ block, previewMode }: { block: any; previewMode?: string }
   const isImage = block.type === 'image' || !block.type;
   const isText = block.type === 'text';
   const isBoth = block.type === 'both';
+  const isMosaic = block.type === 'mosaic';
+  const mosaicSmall = images.slice(1, 5);
+  const mosaicRemaining = images.length - 1 - mosaicSmall.length;
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
@@ -46,6 +49,58 @@ const BentoBlock = ({ block, previewMode }: { block: any; previewMode?: string }
   };
 
   if (currentMode === 'mobile') {
+    if (isMosaic && images.length > 0) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full overflow-hidden mb-5"
+          style={{ borderRadius: block.borderRadius || '20px', backgroundColor: block.bgColor || '#f3ede4' }}
+        >
+          {block.label && (
+            <div className="px-5 pt-4 pb-3 flex items-center justify-between">
+              <span className="text-secondary font-label font-bold tracking-widest text-xs uppercase">{block.label}</span>
+              <span className="font-label text-xs opacity-50">{images.length} fotos</span>
+            </div>
+          )}
+          <div className="px-5 pb-5">
+            <button
+              type="button"
+              onClick={() => onOpenGallery && onOpenGallery(images, 0)}
+              className="w-full overflow-hidden rounded-2xl block mb-3"
+              style={{ aspectRatio: '16 / 10' }}
+            >
+              <img src={images[0]} alt={block.label || 'Interior'} className="w-full h-full object-cover" />
+            </button>
+            {mosaicSmall.length > 0 && (
+              <div className="grid grid-cols-4 gap-2">
+                {mosaicSmall.map((src: string, i: number) => {
+                  const isLast = i === mosaicSmall.length - 1 && mosaicRemaining > 0;
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => onOpenGallery && onOpenGallery(images, i + 1)}
+                      className="relative overflow-hidden rounded-lg"
+                      style={{ aspectRatio: '1 / 1' }}
+                    >
+                      <img src={src} alt={`${block.label || 'Interior'} ${i + 2}`} className="w-full h-full object-cover" />
+                      {isLast && (
+                        <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
+                          <span className="text-white font-label font-semibold text-sm">+{mosaicRemaining}</span>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </motion.div>
+      );
+    }
     const hasText = Boolean(block.label || block.blockTitle || block.blockParagraph || block.buttonText);
     return (
       <motion.div
@@ -177,6 +232,57 @@ const BentoBlock = ({ block, previewMode }: { block: any; previewMode?: string }
         />
       )}
 
+      {/* Mosaic gallery rendering */}
+      {isMosaic && images.length > 0 && (
+        <div className="absolute inset-0 w-full h-full flex flex-col p-3">
+          {block.label && (
+            <div className="flex items-center justify-between px-2 pb-2 shrink-0">
+              <span className="text-secondary font-label font-bold tracking-widest text-xs uppercase">{block.label}</span>
+              <span className="font-label text-xs text-on-surface-variant opacity-60">{images.length} fotos</span>
+            </div>
+          )}
+          <div className="flex-1 flex gap-2 min-h-0">
+            <button
+              type="button"
+              onClick={() => onOpenGallery && onOpenGallery(images, 0)}
+              className="relative flex-[1.1] h-full overflow-hidden rounded-2xl group/mosaic"
+            >
+              <img
+                src={images[0]}
+                alt={block.label || 'Interior'}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover/mosaic:scale-105"
+              />
+            </button>
+            {mosaicSmall.length > 0 && (
+              <div className="flex-1 grid grid-cols-2 grid-rows-2 gap-2 h-full">
+                {mosaicSmall.map((src: string, i: number) => {
+                  const isLast = i === mosaicSmall.length - 1 && mosaicRemaining > 0;
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => onOpenGallery && onOpenGallery(images, i + 1)}
+                      className="relative overflow-hidden rounded-xl group/mosaic"
+                    >
+                      <img
+                        src={src}
+                        alt={`${block.label || 'Interior'} ${i + 2}`}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover/mosaic:scale-105"
+                      />
+                      {isLast && (
+                        <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
+                          <span className="text-white font-label font-semibold text-lg">+{mosaicRemaining}</span>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Image rendering */}
       {(isImage || isBoth) && images[0] && (
         <div className="absolute inset-0 w-full h-full overflow-hidden z-0">
@@ -262,6 +368,22 @@ export default function Home() {
   const [previewMode, setPreviewMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [content, setContent] = useState<any>(contentData);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [lightbox, setLightbox] = useState<{ images: string[]; index: number } | null>(null);
+
+  useEffect(() => {
+    if (!lightbox) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLightbox(null);
+      if (e.key === 'ArrowRight') {
+        setLightbox((l) => (l ? { ...l, index: (l.index + 1) % l.images.length } : l));
+      }
+      if (e.key === 'ArrowLeft') {
+        setLightbox((l) => (l ? { ...l, index: (l.index - 1 + l.images.length) % l.images.length } : l));
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [lightbox]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -435,6 +557,7 @@ export default function Home() {
                   key={block.id || idx}
                   block={block}
                   previewMode={previewMode}
+                  onOpenGallery={(imgs, index) => setLightbox({ images: imgs, index })}
                 />
               ))}
             </div>
@@ -470,6 +593,67 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Gallery Lightbox */}
+      <AnimatePresence>
+        {lightbox && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 z-[3000] bg-black/90 flex items-center justify-center p-4 md:p-10"
+            onClick={() => setLightbox(null)}
+          >
+            <button
+              onClick={(e) => { e.stopPropagation(); setLightbox(null); }}
+              className="absolute top-5 right-5 text-white/80 hover:text-white p-2 z-10"
+              aria-label="Cerrar"
+            >
+              <X className="w-8 h-8" />
+            </button>
+            {lightbox.images.length > 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLightbox((l) => (l ? { ...l, index: (l.index - 1 + l.images.length) % l.images.length } : l));
+                }}
+                className="absolute left-2 md:left-8 text-white/80 hover:text-white p-3 z-10"
+                aria-label="Anterior"
+              >
+                <ChevronLeft className="w-8 h-8 md:w-10 md:h-10" />
+              </button>
+            )}
+            <motion.img
+              key={lightbox.index}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
+              src={lightbox.images[lightbox.index]}
+              alt=""
+              className="max-w-full max-h-full object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+            {lightbox.images.length > 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLightbox((l) => (l ? { ...l, index: (l.index + 1) % l.images.length } : l));
+                }}
+                className="absolute right-2 md:right-8 text-white/80 hover:text-white p-3 z-10"
+                aria-label="Siguiente"
+              >
+                <ChevronRight className="w-8 h-8 md:w-10 md:h-10" />
+              </button>
+            )}
+            {lightbox.images.length > 1 && (
+              <div className="absolute bottom-5 left-1/2 -translate-x-1/2 text-white/70 font-label text-sm tracking-wide">
+                {lightbox.index + 1} / {lightbox.images.length}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <style jsx global>{`
         @media (min-width: 769px) and (max-width: 1024px) {
