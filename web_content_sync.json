@@ -108,7 +108,9 @@
           "blockTitle": "Inicia tu escape",
           "blockParagraph": "Selecciona tu plataforma preferida para gestionar tu reserva de forma segura.",
           "buttonText": "Reservar en Airbnb",
-          "buttonLink": "https://www.airbnb.cl/rooms/1702295511791817167"
+          "buttonLink": "https://www.airbnb.cl/rooms/1702295511791817167",
+          "buttonText2": "Reservar en Booking.com",
+          "buttonLink2": "https://www.booking.com/hotel/cl/tiny-puertecillo-entre-el-bosque-y-el-mar.es.html?aid=2311236&label=es-cl-booking-desktop-LVoANQ22b9Q1GvFzlorfdQS652829001271%3Apl%3Ata%3Ap1%3Ap2%3Aac%3Aap%3Aneg%3Afi%3Atikwd-65526620%3Alp1003316%3Ali%3Adec%3Adm"
         },
         {
           "id": "block_1783652509798",
