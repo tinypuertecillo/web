@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion';
-import { Layers, MapPin, Calendar, Compass, Shield, Wind, Flame, Coffee } from 'lucide-react';
+import { Layers, MapPin, Calendar, Compass, Shield, Wind, Flame, Coffee, Menu, X } from 'lucide-react';
 import contentData from '../../web_content_sync.json';
 
 const BentoBlock = ({ block, previewMode }: { block: any; previewMode?: string }) => {
@@ -44,6 +44,82 @@ const BentoBlock = ({ block, previewMode }: { block: any; previewMode?: string }
     const rect = cardRef.current.getBoundingClientRect();
     setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
   };
+
+  if (currentMode === 'mobile') {
+    const hasText = Boolean(block.label || block.blockTitle || block.blockParagraph || block.buttonText);
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-60px' }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+        className="w-full overflow-hidden mb-5"
+        style={{
+          borderRadius: block.borderRadius || '20px',
+          backgroundColor: hasText ? (block.bgColor || '#f3ede4') : 'transparent',
+        }}
+      >
+        {(isImage || isBoth) && images[0] && (
+          <div className="w-full" style={{ aspectRatio: '4 / 3' }}>
+            <img
+              src={images[0]}
+              alt={block.label}
+              className="w-full h-full object-cover"
+              style={{
+                borderRadius: hasText
+                  ? `${block.borderRadius || '20px'} ${block.borderRadius || '20px'} 0 0`
+                  : (block.borderRadius || '20px')
+              }}
+            />
+          </div>
+        )}
+        {hasText && (
+          <div
+            className="px-6 py-6"
+            style={{ color: block.textColor || '#1d1b16', textAlign: block.textAlign || 'left' }}
+          >
+            {block.label && (
+              <span className="text-secondary font-label font-bold tracking-widest text-xs uppercase mb-2 block">
+                {block.label}
+              </span>
+            )}
+            {block.blockTitle && (
+              <h3
+                className="font-serif leading-tight tracking-tight mb-3 text-2xl"
+                style={{ color: block.textColor }}
+              >
+                {block.blockTitle}
+              </h3>
+            )}
+            {block.blockParagraph && (
+              <p
+                className="font-body text-base leading-relaxed"
+                style={{ color: block.textColor ? `${block.textColor}dd` : undefined, whiteSpace: 'pre-line' }}
+              >
+                {block.blockParagraph}
+              </p>
+            )}
+            {block.buttonText && (
+              block.buttonLink ? (
+                <a
+                  href={block.buttonLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-6 inline-block bg-primary-container text-on-primary px-8 py-3 rounded-DEFAULT font-label font-semibold tracking-wide hover:opacity-90 transition-all shadow-md"
+                >
+                  {block.buttonText}
+                </a>
+              ) : (
+                <button className="mt-6 bg-primary-container text-on-primary px-8 py-3 rounded-DEFAULT font-label font-semibold tracking-wide hover:opacity-90 transition-all shadow-md">
+                  {block.buttonText}
+                </button>
+              )
+            )}
+          </div>
+        )}
+      </motion.div>
+    );
+  }
 
   const getIcon = (label: string) => {
     const l = label.toLowerCase();
@@ -185,6 +261,7 @@ export default function Home() {
 
   const [previewMode, setPreviewMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [content, setContent] = useState<any>(contentData);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -228,25 +305,52 @@ export default function Home() {
 
       {/* TopNavBar */}
       <nav className="fixed top-0 w-full z-50 bg-[#fff9ef]/80 dark:bg-[#1d1b16]/80 backdrop-blur-xl border-b border-outline-variant/10 transition-all duration-300">
-        <div className="flex justify-between items-center max-w-7xl mx-auto px-8 py-6 w-full">
+        <div className="flex justify-between items-center max-w-7xl mx-auto px-5 md:px-8 py-4 md:py-6 w-full">
           <a className="hover:opacity-80 transition-all duration-300 block" href="#">
-            <img src="/logo/logo_negro.png" alt="Tiny Puertecillo" className="h-14 w-auto block dark:hidden" />
-            <img src="/logo/logo_blanco.png" alt="Tiny Puertecillo" className="h-14 w-auto hidden dark:block" />
+            <img src="/logo/logo_negro.png" alt="Tiny Puertecillo" className="h-10 md:h-14 w-auto block dark:hidden" />
+            <img src="/logo/logo_blanco.png" alt="Tiny Puertecillo" className="h-10 md:h-14 w-auto hidden dark:block" />
           </a>
           <div className="hidden md:flex items-center space-x-10">
             <a className="text-[#163428] dark:text-[#fff9ef] border-b-2 border-[#964828] pb-1 font-label text-sm tracking-wide" href="#">Inicio</a>
             <a className="text-[#1d1b16]/70 dark:text-[#f3ede4]/70 hover:text-[#163428] transition-colors font-label text-sm tracking-wide" href="#lienzo">Las Tiny</a>
             <a className="text-[#1d1b16]/70 dark:text-[#f3ede4]/70 hover:text-[#163428] transition-colors font-label text-sm tracking-wide" href="#contacto">Contacto</a>
           </div>
-          <a
-            href="https://www.airbnb.cl/rooms/1702295511791817167"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-primary-container text-on-primary px-8 py-3 rounded-DEFAULT font-label font-semibold tracking-wide hover:opacity-90 transition-all inline-block"
-          >
-            Reservar
-          </a>
+          <div className="flex items-center gap-2 md:gap-0">
+            <a
+              href="https://www.airbnb.cl/rooms/1702295511791817167"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-primary-container text-on-primary px-4 md:px-8 py-2 md:py-3 rounded-DEFAULT font-label font-semibold tracking-wide text-sm md:text-base hover:opacity-90 transition-all inline-block"
+            >
+              Reservar
+            </a>
+            <button
+              className="md:hidden p-2 ml-1 text-[#1d1b16] dark:text-[#f9f3ea]"
+              aria-label="Abrir menú"
+              aria-expanded={mobileMenuOpen}
+              onClick={() => setMobileMenuOpen((v) => !v)}
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="md:hidden overflow-hidden bg-[#fff9ef] dark:bg-[#1d1b16] border-t border-outline-variant/10"
+            >
+              <div className="flex flex-col px-5 py-4 gap-4">
+                <a onClick={() => setMobileMenuOpen(false)} className="text-[#163428] dark:text-[#fff9ef] font-label text-base tracking-wide" href="#">Inicio</a>
+                <a onClick={() => setMobileMenuOpen(false)} className="text-[#1d1b16]/80 dark:text-[#f3ede4]/80 font-label text-base tracking-wide" href="#lienzo">Las Tiny</a>
+                <a onClick={() => setMobileMenuOpen(false)} className="text-[#1d1b16]/80 dark:text-[#f3ede4]/80 font-label text-base tracking-wide" href="#contacto">Contacto</a>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
       <main className="flex-grow">
@@ -267,7 +371,7 @@ export default function Home() {
                   initial={{ opacity: 0, y: 40 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-                  className="text-white font-serif text-6xl md:text-8xl leading-tight tracking-tight mb-6"
+                  className="text-white font-serif text-4xl sm:text-5xl md:text-8xl leading-[1.1] md:leading-tight tracking-tight mb-6"
                 >
                   {heroContent.title1}
                 </motion.h1>
@@ -312,7 +416,12 @@ export default function Home() {
           <div className="w-full max-w-none px-4 md:px-8">
             <div
               className="bento-grid-mobile"
-              style={{
+              style={previewMode === 'mobile' ? {
+                display: 'flex',
+                flexDirection: 'column',
+                maxWidth: '100%',
+                margin: '0 auto'
+              } : {
                 display: 'grid',
                 gridTemplateColumns: 'repeat(48, 1fr)',
                 gridAutoRows: '15px',
@@ -363,32 +472,12 @@ export default function Home() {
       </footer>
 
       <style jsx global>{`
-        @media (max-width: 768px) {
-          .bento-grid-mobile {
-            grid-template-columns: repeat(48, 1fr) !important;
-            gap: 0px !important;
-          }
-          .bento-block-mobile {
-            grid-column: var(--final-col) / span var(--final-span-w) !important;
-            grid-row: var(--final-row) / span var(--final-span-h) !important;
-            aspect-ratio: auto !important;
-          }
-        }
-
         @media (min-width: 769px) and (max-width: 1024px) {
           .bento-block-mobile {
-            --final-col: var(--m-col) !important;
-            --final-row: var(--m-row) !important;
-            --final-span-w: var(--m-span-w) !important;
-            --final-span-h: var(--m-span-h) !important;
-          }
-        }
-        @media (max-width: 768px) {
-          .bento-block-mobile {
-            --final-col: var(--m-col) !important;
-            --final-row: var(--m-row) !important;
-            --final-span-w: var(--m-span-w) !important;
-            --final-span-h: var(--m-span-h) !important;
+            --final-col: var(--t-col) !important;
+            --final-row: var(--t-row) !important;
+            --final-span-w: var(--t-span-w) !important;
+            --final-span-h: var(--t-span-h) !important;
           }
         }
       `}</style>
