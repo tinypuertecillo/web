@@ -154,9 +154,20 @@ const BentoBlock = ({ block, previewMode }: { block: any; previewMode?: string }
           )}
 
           {block.buttonText && (
-            <button className="mt-8 bg-primary-container text-on-primary px-8 py-3 rounded-DEFAULT font-label font-semibold tracking-wide hover:opacity-90 transition-all pointer-events-auto shadow-md">
-              {block.buttonText}
-            </button>
+            block.buttonLink ? (
+              <a
+                href={block.buttonLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-8 inline-block bg-primary-container text-on-primary px-8 py-3 rounded-DEFAULT font-label font-semibold tracking-wide hover:opacity-90 transition-all pointer-events-auto shadow-md"
+              >
+                {block.buttonText}
+              </a>
+            ) : (
+              <button className="mt-8 bg-primary-container text-on-primary px-8 py-3 rounded-DEFAULT font-label font-semibold tracking-wide hover:opacity-90 transition-all pointer-events-auto shadow-md">
+                {block.buttonText}
+              </button>
+            )
           )}
         </div>
       )}
@@ -227,9 +238,14 @@ export default function Home() {
             <a className="text-[#1d1b16]/70 dark:text-[#f3ede4]/70 hover:text-[#163428] transition-colors font-label text-sm tracking-wide" href="#lienzo">Las Tiny</a>
             <a className="text-[#1d1b16]/70 dark:text-[#f3ede4]/70 hover:text-[#163428] transition-colors font-label text-sm tracking-wide" href="#contacto">Contacto</a>
           </div>
-          <button className="bg-primary-container text-on-primary px-8 py-3 rounded-DEFAULT font-label font-semibold tracking-wide hover:opacity-90 transition-all">
+          <a
+            href="https://www.airbnb.cl/rooms/1702295511791817167"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-primary-container text-on-primary px-8 py-3 rounded-DEFAULT font-label font-semibold tracking-wide hover:opacity-90 transition-all inline-block"
+          >
             Reservar
-          </button>
+          </a>
         </div>
       </nav>
 
@@ -321,9 +337,9 @@ export default function Home() {
       <footer id="contacto" className="w-full py-16 px-8 bg-[#f3ede4] dark:bg-[#163428] border-t border-outline-variant/10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-7xl mx-auto w-full">
           <div className="space-y-6">
-            <img 
-              src="https://xqybckftzuupkmbwocrj.supabase.co/storage/v1/object/public/logo/logo_negro_clean.png" 
-              alt="Tiny Puertecillo Logo" 
+            <img
+              src="/logo/logo_negro_clean.png"
+              alt="Tiny Puertecillo Logo"
               className="h-16 w-auto object-contain dark:invert"
             />
             <p className="text-[#1d1b16] dark:text-[#f9f3ea] font-label text-sm opacity-70">
@@ -361,10 +377,10 @@ export default function Home() {
 
         @media (min-width: 769px) and (max-width: 1024px) {
           .bento-block-mobile {
-            --final-col: var(--t-col) !important;
-            --final-row: var(--t-row) !important;
-            --final-span-w: var(--t-span-w) !important;
-            --final-span-h: var(--t-span-h) !important;
+            --final-col: var(--m-col) !important;
+            --final-row: var(--m-row) !important;
+            --final-span-w: var(--m-span-w) !important;
+            --final-span-h: var(--m-span-h) !important;
           }
         }
         @media (max-width: 768px) {
