@@ -2,7 +2,7 @@
   "hero": {
     "title1": "EL EQUILIBRIO PERFECTO ENTRE EL BOSQUE Y EL MAR.",
     "paragraph1": "Descubre nuestras exclusivas Tiny Houses en Camino a Tumán, Puertecillo. Un refugio privado dentro de un condominio seguro con plazas y senderos para recorrer en bicicleta, a solo 15 minutos de las mejores olas de la costa.",
-    "background_image": "https://lh3.googleusercontent.com/aida-public/AB6AXuBvPqo0VMdXxM9w8Qrqyt91PPm_Eh9Q-G5-66XmR5mD7cM398PZ2XKBr_BAHHqrTV0RNERfsvC6cs9JgsUR29bZxDxkroOew_F0V2Y5Zgi8-zd3pZFq_wR-bM7zcbomG3M7iaTW8-ep-nWSOhAPpQ26cF2El8LjVEivvPLMR7YWVBXLyUr9MMY5HqkYhnaH7Nv6qMbu0N3E2dIxvreU4oWVdBlcrnK4n0F8_BcdumyNkMa8l97TmN2SECP1N_we3SIH28lH-tfZkEw",
+    "background_image": "/hero/foto_01.jpg",
     "cta_text": "Reservar",
     "cta_link": "#reservas",
     "text_align_h": "left",
@@ -33,9 +33,9 @@
           "mSpan": "48x18",
           "zIndex": 1,
           "borderRadius": "12px",
-          "image": "/grilla/los_pimientos.jpg",
+          "image": "/grilla/refugio.jfif",
           "gallery": [
-            "/grilla/los_pimientos.jpg"
+            "/grilla/refugio.jfif"
           ]
         },
         {
@@ -107,35 +107,17 @@
           "textAlign": "center",
           "blockTitle": "Inicia tu escape",
           "blockParagraph": "Selecciona tu plataforma preferida para gestionar tu reserva de forma segura.",
-          "buttonText": "Reservar en Airbnb"
-        },
-        {
-          "id": "block_1783651152086",
-          "label": "NUEVO BLOQUE",
-          "type": "image",
-          "span": "15x25",
-          "col": 1,
-          "row": 41,
-          "tCol": 1,
-          "tRow": 170,
-          "tSpan": "48x20",
-          "mCol": 1,
-          "mRow": 170,
-          "mSpan": "48x15",
-          "zIndex": 1,
-          "opacity": 1,
-          "borderRadius": "24px",
-          "shadow": "none",
-          "textAlign": "center",
-          "gallery": [],
-          "bgColor": "#b79c8a"
+          "buttonText": "Reservar en Airbnb",
+          "buttonLink": "https://www.airbnb.cl/rooms/1702295511791817167",
+          "buttonText2": "Reservar en Booking.com",
+          "buttonLink2": "https://www.booking.com/hotel/cl/tiny-puertecillo-entre-el-bosque-y-el-mar.es.html?aid=2311236&label=es-cl-booking-desktop-LVoANQ22b9Q1GvFzlorfdQS652829001271%3Apl%3Ata%3Ap1%3Ap2%3Aac%3Aap%3Aneg%3Afi%3Atikwd-65526620%3Alp1003316%3Ali%3Adec%3Adm"
         },
         {
           "id": "block_1783652509798",
           "label": "Detalle Diseño",
           "type": "text",
           "span": "15x25",
-          "col": 17,
+          "col": 1,
           "row": 41,
           "tCol": 1,
           "tRow": 170,
@@ -159,25 +141,37 @@
           "titleLineHeight": "1.2"
         },
         {
-          "id": "block_1783652746534",
-          "label": "NUEVO BLOQUE",
-          "type": "image",
-          "span": "15x25",
-          "col": 33,
+          "id": "block_gallery_interior",
+          "label": "Interior",
+          "type": "mosaic",
+          "span": "31x25",
+          "col": 17,
           "row": 41,
           "tCol": 1,
-          "tRow": 146,
+          "tRow": 192,
           "tSpan": "48x20",
           "mCol": 1,
-          "mRow": 146,
-          "mSpan": "48x15",
+          "mRow": 175,
+          "mSpan": "48x22",
           "zIndex": 1,
           "opacity": 1,
           "borderRadius": "24px",
           "shadow": "none",
           "textAlign": "center",
-          "gallery": [],
-          "bgColor": "#b79c8a"
+          "image": "/grilla/foto_21.jpg",
+          "gallery": [
+            "/grilla/foto_21.jpg",
+            "/grilla/foto_22.jpg",
+            "/grilla/foto_23.jpg",
+            "/grilla/foto_24.jpg",
+            "/grilla/foto_26.jpg",
+            "/grilla/foto_27.jpg",
+            "/grilla/foto_28.jpg",
+            "/grilla/foto_29.jpg",
+            "/grilla/foto_30.jpg",
+            "/grilla/foto_31.jpg"
+          ],
+          "bgColor": "#f3ede4"
         },
         {
           "id": "block_dup_1783656632333",
@@ -208,46 +202,35 @@
           "titleLineHeight": "1.2"
         },
         {
-          "id": "block_dup_1783656636101",
-          "label": "NUEVO BLOQUE (Copia)",
-          "type": "image",
-          "span": "15x25",
+          "id": "block_gallery_terraza",
+          "label": "Terraza",
+          "type": "mosaic",
+          "mosaicLayout": "strip",
+          "span": "31x25",
           "col": 17,
           "row": 68,
           "tCol": 1,
-          "tRow": 197,
+          "tRow": 217,
           "tSpan": "48x20",
           "mCol": 1,
           "mRow": 197,
-          "mSpan": "48x15",
+          "mSpan": "48x22",
           "zIndex": 1,
           "opacity": 1,
           "borderRadius": "24px",
           "shadow": "none",
           "textAlign": "center",
-          "gallery": [],
-          "bgColor": "#b79c8a"
-        },
-        {
-          "id": "block_dup_1783656641917",
-          "label": "NUEVO BLOQUE (Copia)",
-          "type": "image",
-          "span": "15x25",
-          "col": 33,
-          "row": 68,
-          "tCol": 1,
-          "tRow": 173,
-          "tSpan": "48x20",
-          "mCol": 1,
-          "mRow": 173,
-          "mSpan": "48x15",
-          "zIndex": 1,
-          "opacity": 1,
-          "borderRadius": "24px",
-          "shadow": "none",
-          "textAlign": "center",
-          "gallery": [],
-          "bgColor": "#b79c8a"
+          "image": "/grilla/foto_02.jpg",
+          "gallery": [
+            "/grilla/foto_02.jpg",
+            "/grilla/foto_05.jpg",
+            "/grilla/foto_07.jpg",
+            "/grilla/foto_10.jpg",
+            "/grilla/foto_11.jpg",
+            "/grilla/foto_12.jpg",
+            "/grilla/foto_13.jpg"
+          ],
+          "bgColor": "#f3ede4"
         },
         {
           "id": "block_dup_1783656935741",
@@ -403,69 +386,6 @@
           ]
         },
         {
-          "id": "block_map_img_puertecillo",
-          "label": "Atractivo FOTO: Playa Puertecillo",
-          "type": "image",
-          "span": "11x20",
-          "col": 13,
-          "row": 167,
-          "tCol": 1,
-          "tRow": 340,
-          "tSpan": "48x15",
-          "mCol": 1,
-          "mRow": 340,
-          "mSpan": "48x15",
-          "zIndex": 1,
-          "borderRadius": "12px",
-          "bgColor": "#b79c8a",
-          "image": "/grilla/INSUMO-1783889773131-0.webp",
-          "gallery": [
-            "/grilla/INSUMO-1783889773131-0.webp"
-          ]
-        },
-        {
-          "id": "block_map_img_arcos",
-          "label": "Atractivo FOTO: Los Arcos",
-          "type": "image",
-          "span": "11x20",
-          "col": 25,
-          "row": 167,
-          "tCol": 1,
-          "tRow": 360,
-          "tSpan": "48x15",
-          "mCol": 1,
-          "mRow": 360,
-          "mSpan": "48x15",
-          "zIndex": 1,
-          "borderRadius": "12px",
-          "bgColor": "#b79c8a",
-          "image": "/grilla/INSUMO-1783886297075-0.webp",
-          "gallery": [
-            "/grilla/INSUMO-1783886297075-0.webp"
-          ]
-        },
-        {
-          "id": "block_map_img_matanzas",
-          "label": "Atractivo FOTO: Matanzas",
-          "type": "image",
-          "span": "11x20",
-          "col": 37,
-          "row": 167,
-          "tCol": 1,
-          "tRow": 380,
-          "tSpan": "48x15",
-          "mCol": 1,
-          "mRow": 380,
-          "mSpan": "48x15",
-          "zIndex": 1,
-          "borderRadius": "12px",
-          "bgColor": "#b79c8a",
-          "image": "/grilla/INSUMO-1783890743723-0.webp",
-          "gallery": [
-            "/grilla/INSUMO-1783890743723-0.webp"
-          ]
-        },
-        {
           "id": "block_map_polcura",
           "label": "Mapa: Polcura",
           "type": "text",
@@ -492,6 +412,27 @@
           "textTransform": "lowercase",
           "lineHeight": "1.6",
           "titleLineHeight": "1.2"
+        },
+        {
+          "id": "block_map_img_puertecillo",
+          "label": "Atractivo FOTO: Playa Puertecillo",
+          "type": "image",
+          "span": "11x20",
+          "col": 13,
+          "row": 167,
+          "tCol": 1,
+          "tRow": 340,
+          "tSpan": "48x15",
+          "mCol": 1,
+          "mRow": 340,
+          "mSpan": "48x15",
+          "zIndex": 1,
+          "borderRadius": "12px",
+          "bgColor": "#b79c8a",
+          "image": "/grilla/INSUMO-1783889773131-0.webp",
+          "gallery": [
+            "/grilla/INSUMO-1783889773131-0.webp"
+          ]
         },
         {
           "id": "block_map_puertecillo",
@@ -522,6 +463,27 @@
           "titleLineHeight": "1.2"
         },
         {
+          "id": "block_map_img_arcos",
+          "label": "Atractivo FOTO: Los Arcos",
+          "type": "image",
+          "span": "11x20",
+          "col": 25,
+          "row": 167,
+          "tCol": 1,
+          "tRow": 360,
+          "tSpan": "48x15",
+          "mCol": 1,
+          "mRow": 360,
+          "mSpan": "48x15",
+          "zIndex": 1,
+          "borderRadius": "12px",
+          "bgColor": "#b79c8a",
+          "image": "/grilla/INSUMO-1783886297075-0.webp",
+          "gallery": [
+            "/grilla/INSUMO-1783886297075-0.webp"
+          ]
+        },
+        {
           "id": "block_map_arcos",
           "label": "Mapa: Los Arcos",
           "type": "text",
@@ -548,6 +510,27 @@
           "textTransform": "lowercase",
           "lineHeight": "1.6",
           "titleLineHeight": "1.2"
+        },
+        {
+          "id": "block_map_img_matanzas",
+          "label": "Atractivo FOTO: Matanzas",
+          "type": "image",
+          "span": "11x20",
+          "col": 37,
+          "row": 167,
+          "tCol": 1,
+          "tRow": 380,
+          "tSpan": "48x15",
+          "mCol": 1,
+          "mRow": 380,
+          "mSpan": "48x15",
+          "zIndex": 1,
+          "borderRadius": "12px",
+          "bgColor": "#b79c8a",
+          "image": "/grilla/INSUMO-1783890743723-0.webp",
+          "gallery": [
+            "/grilla/INSUMO-1783890743723-0.webp"
+          ]
         },
         {
           "id": "block_map_matanzas",

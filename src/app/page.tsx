@@ -2,10 +2,13 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence, useScroll, useSpring } from 'framer-motion';
-import { Layers, MapPin, Calendar, Compass, Shield, Wind, Flame, Coffee, Menu, X } from 'lucide-react';
+import { Layers, MapPin, Calendar, Compass, Shield, Wind, Flame, Coffee, Menu, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import contentData from '../../web_content_sync.json';
 
-const BentoBlock = ({ block, previewMode }: { block: any; previewMode?: string }) => {
+const AIRBNB_URL = 'https://www.airbnb.cl/rooms/1702295511791817167';
+const BOOKING_URL = 'https://www.booking.com/hotel/cl/tiny-puertecillo-entre-el-bosque-y-el-mar.es.html?aid=2311236&label=es-cl-booking-desktop-LVoANQ22b9Q1GvFzlorfdQS652829001271%3Apl%3Ata%3Ap1%3Ap2%3Aac%3Aap%3Aneg%3Afi%3Atikwd-65526620%3Alp1003316%3Ali%3Adec%3Adm';
+
+const BentoBlock = ({ block, previewMode, onOpenGallery }: { block: any; previewMode?: string; onOpenGallery?: (images: string[], index: number) => void }) => {
   const currentMode = previewMode || 'desktop';
   let finalCol = block.col || 1;
   let finalRow = block.row || 1;
@@ -38,6 +41,12 @@ const BentoBlock = ({ block, previewMode }: { block: any; previewMode?: string }
   const isImage = block.type === 'image' || !block.type;
   const isText = block.type === 'text';
   const isBoth = block.type === 'both';
+  const isMosaic = block.type === 'mosaic';
+  const mosaicLayout = block.mosaicLayout || 'hero';
+  const mosaicSmall = images.slice(1, 5);
+  const mosaicRemaining = images.length - 1 - mosaicSmall.length;
+  const stripShown = images.slice(0, 5);
+  const stripRemaining = images.length - stripShown.length;
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
@@ -46,6 +55,94 @@ const BentoBlock = ({ block, previewMode }: { block: any; previewMode?: string }
   };
 
   if (currentMode === 'mobile') {
+    if (isMosaic && images.length > 0 && mosaicLayout === 'strip') {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full overflow-hidden mb-5"
+          style={{ borderRadius: block.borderRadius || '20px', backgroundColor: block.bgColor || '#f3ede4' }}
+        >
+          {block.label && (
+            <div className="px-5 pt-4 pb-3 flex items-center justify-between">
+              <span className="text-secondary font-label font-bold tracking-widest text-xs uppercase">{block.label}</span>
+              <span className="font-label text-xs opacity-50">{images.length} fotos</span>
+            </div>
+          )}
+          <div
+            className="hide-scrollbar flex gap-3 overflow-x-auto pb-5 pl-5 pr-2 snap-x snap-mandatory"
+            style={{ scrollbarWidth: 'none' }}
+          >
+            {images.map((src: string, i: number) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => onOpenGallery && onOpenGallery(images, i)}
+                className="relative shrink-0 snap-start overflow-hidden rounded-2xl"
+                style={{ width: '78%', aspectRatio: '4 / 5' }}
+              >
+                <img src={src} alt={`${block.label || 'Galería'} ${i + 1}`} className="w-full h-full object-cover" />
+              </button>
+            ))}
+            <div className="shrink-0 w-2" />
+          </div>
+        </motion.div>
+      );
+    }
+    if (isMosaic && images.length > 0) {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full overflow-hidden mb-5"
+          style={{ borderRadius: block.borderRadius || '20px', backgroundColor: block.bgColor || '#f3ede4' }}
+        >
+          {block.label && (
+            <div className="px-5 pt-4 pb-3 flex items-center justify-between">
+              <span className="text-secondary font-label font-bold tracking-widest text-xs uppercase">{block.label}</span>
+              <span className="font-label text-xs opacity-50">{images.length} fotos</span>
+            </div>
+          )}
+          <div className="px-5 pb-5">
+            <button
+              type="button"
+              onClick={() => onOpenGallery && onOpenGallery(images, 0)}
+              className="w-full overflow-hidden rounded-2xl block mb-3"
+              style={{ aspectRatio: '16 / 10' }}
+            >
+              <img src={images[0]} alt={block.label || 'Interior'} className="w-full h-full object-cover" />
+            </button>
+            {mosaicSmall.length > 0 && (
+              <div className="grid grid-cols-4 gap-2">
+                {mosaicSmall.map((src: string, i: number) => {
+                  const isLast = i === mosaicSmall.length - 1 && mosaicRemaining > 0;
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => onOpenGallery && onOpenGallery(images, i + 1)}
+                      className="relative overflow-hidden rounded-lg"
+                      style={{ aspectRatio: '1 / 1' }}
+                    >
+                      <img src={src} alt={`${block.label || 'Interior'} ${i + 2}`} className="w-full h-full object-cover" />
+                      {isLast && (
+                        <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
+                          <span className="text-white font-label font-semibold text-sm">+{mosaicRemaining}</span>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </motion.div>
+      );
+    }
     const hasText = Boolean(block.label || block.blockTitle || block.blockParagraph || block.buttonText);
     return (
       <motion.div
@@ -100,20 +197,41 @@ const BentoBlock = ({ block, previewMode }: { block: any; previewMode?: string }
               </p>
             )}
             {block.buttonText && (
-              block.buttonLink ? (
-                <a
-                  href={block.buttonLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-6 inline-block bg-primary-container text-on-primary px-8 py-3 rounded-DEFAULT font-label font-semibold tracking-wide hover:opacity-90 transition-all shadow-md"
-                >
-                  {block.buttonText}
-                </a>
-              ) : (
-                <button className="mt-6 bg-primary-container text-on-primary px-8 py-3 rounded-DEFAULT font-label font-semibold tracking-wide hover:opacity-90 transition-all shadow-md">
-                  {block.buttonText}
-                </button>
-              )
+              <div
+                className="mt-6 flex flex-col sm:flex-row gap-3"
+                style={{ justifyContent: block.textAlign === 'center' ? 'center' : (block.textAlign === 'right' ? 'flex-end' : 'flex-start') }}
+              >
+                {block.buttonLink ? (
+                  <a
+                    href={block.buttonLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block text-center bg-primary-container text-on-primary px-8 py-3.5 rounded-full font-label font-semibold tracking-wide hover:opacity-90 active:scale-[0.98] transition-all shadow-md"
+                  >
+                    {block.buttonText}
+                  </a>
+                ) : (
+                  <button className="bg-primary-container text-on-primary px-8 py-3.5 rounded-full font-label font-semibold tracking-wide hover:opacity-90 active:scale-[0.98] transition-all shadow-md">
+                    {block.buttonText}
+                  </button>
+                )}
+                {block.buttonText2 && block.buttonLink2 && (
+                  <a
+                    href={block.buttonLink2}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="secondary-cta-btn inline-block text-center px-8 py-3.5 rounded-full font-label font-semibold tracking-wide transition-all active:scale-[0.98]"
+                    style={{
+                      border: `1.5px solid ${block.textColor || '#163428'}66`,
+                      color: block.textColor || '#163428',
+                      '--secondary-cta-bg': block.textColor || '#163428',
+                      '--secondary-cta-fg': block.bgColor || '#fff9ef'
+                    } as any}
+                  >
+                    {block.buttonText2}
+                  </a>
+                )}
+              </div>
             )}
           </div>
         )}
@@ -177,6 +295,105 @@ const BentoBlock = ({ block, previewMode }: { block: any; previewMode?: string }
         />
       )}
 
+      {/* Mosaic gallery rendering */}
+      {isMosaic && images.length > 0 && (
+        <div className="absolute inset-0 w-full h-full flex flex-col p-3">
+          {block.label && (
+            <div className="flex items-center justify-between px-2 pb-2 shrink-0">
+              <span className="text-secondary font-label font-bold tracking-widest text-xs uppercase">{block.label}</span>
+              <span className="font-label text-xs text-on-surface-variant opacity-60">{images.length} fotos</span>
+            </div>
+          )}
+          {mosaicLayout === 'strip' ? (
+            <div className="flex-1 flex flex-col gap-2 min-h-0">
+              <div className="flex-[1.15] flex gap-2 min-h-0">
+                {stripShown.slice(0, 2).map((src: string, i: number) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => onOpenGallery && onOpenGallery(images, i)}
+                    className="relative flex-1 h-full overflow-hidden rounded-2xl group/mosaic"
+                  >
+                    <img
+                      src={src}
+                      alt={`${block.label || 'Terraza'} ${i + 1}`}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover/mosaic:scale-105"
+                    />
+                  </button>
+                ))}
+              </div>
+              {stripShown.length > 2 && (
+                <div className="flex-1 flex gap-2 min-h-0">
+                  {stripShown.slice(2, 5).map((src: string, i: number) => {
+                    const realIndex = i + 2;
+                    const isLast = realIndex === stripShown.length - 1 && stripRemaining > 0;
+                    return (
+                      <button
+                        key={realIndex}
+                        type="button"
+                        onClick={() => onOpenGallery && onOpenGallery(images, realIndex)}
+                        className="relative flex-1 h-full overflow-hidden rounded-xl group/mosaic"
+                      >
+                        <img
+                          src={src}
+                          alt={`${block.label || 'Terraza'} ${realIndex + 1}`}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover/mosaic:scale-105"
+                        />
+                        {isLast && (
+                          <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
+                            <span className="text-white font-label font-semibold text-lg">+{stripRemaining}</span>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex-1 flex gap-2 min-h-0">
+              <button
+                type="button"
+                onClick={() => onOpenGallery && onOpenGallery(images, 0)}
+                className="relative flex-[1.1] h-full overflow-hidden rounded-2xl group/mosaic"
+              >
+                <img
+                  src={images[0]}
+                  alt={block.label || 'Interior'}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover/mosaic:scale-105"
+                />
+              </button>
+              {mosaicSmall.length > 0 && (
+                <div className="flex-1 grid grid-cols-2 grid-rows-2 gap-2 h-full">
+                  {mosaicSmall.map((src: string, i: number) => {
+                    const isLast = i === mosaicSmall.length - 1 && mosaicRemaining > 0;
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => onOpenGallery && onOpenGallery(images, i + 1)}
+                        className="relative overflow-hidden rounded-xl group/mosaic"
+                      >
+                        <img
+                          src={src}
+                          alt={`${block.label || 'Interior'} ${i + 2}`}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover/mosaic:scale-105"
+                        />
+                        {isLast && (
+                          <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
+                            <span className="text-white font-label font-semibold text-lg">+{mosaicRemaining}</span>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Image rendering */}
       {(isImage || isBoth) && images[0] && (
         <div className="absolute inset-0 w-full h-full overflow-hidden z-0">
@@ -198,11 +415,13 @@ const BentoBlock = ({ block, previewMode }: { block: any; previewMode?: string }
       {/* Text rendering */}
       {(isText || isBoth) && (
         <div
-          className={`absolute inset-0 z-10 flex flex-col justify-end p-8 md:p-10 pointer-events-none`}
+          className={`absolute inset-0 z-10 flex flex-col pointer-events-none`}
           style={{
             color: block.textColor || '#1d1b16',
             textAlign: block.textAlign || 'left',
-            alignItems: block.textAlign === 'center' ? 'center' : (block.textAlign === 'right' ? 'flex-end' : 'flex-start')
+            alignItems: block.textAlign === 'center' ? 'center' : (block.textAlign === 'right' ? 'flex-end' : 'flex-start'),
+            justifyContent: block.textVerticalAlign === 'center' ? 'center' : (block.textVerticalAlign === 'top' ? 'flex-start' : 'flex-end'),
+            padding: block.textPadding || '40px'
           }}
         >
           {block.label && !isBoth && (
@@ -210,40 +429,73 @@ const BentoBlock = ({ block, previewMode }: { block: any; previewMode?: string }
               {block.label}
             </span>
           )}
-          
+
           {block.blockTitle && (
             <h3
-              className={`font-serif leading-tight tracking-tight mb-4 ${isBoth ? 'text-white text-3xl' : 'text-primary text-4xl'}`}
-              style={{ color: block.textColor }}
+              className={`font-serif tracking-tight mb-4 ${isBoth ? 'text-white' : 'text-primary'}`}
+              style={{
+                color: block.textColor,
+                fontSize: block.titleSize || (isBoth ? '30px' : '36px'),
+                lineHeight: block.titleLineHeight || '1.2',
+                textTransform: (block.textTransform as any) || 'none'
+              }}
             >
               {block.blockTitle}
             </h3>
           )}
-          
+
           {block.blockParagraph && (
             <p
-              className={`font-body text-base leading-relaxed max-w-xl ${isBoth ? 'text-white/80' : 'text-on-surface-variant'}`}
-              style={{ color: block.textColor ? `${block.textColor}dd` : undefined, whiteSpace: 'pre-line' }}
+              className={`font-body ${isBoth ? 'text-white/80' : 'text-on-surface-variant'}`}
+              style={{
+                color: block.textColor ? `${block.textColor}dd` : undefined,
+                whiteSpace: 'pre-line',
+                fontSize: block.paragraphSize || '16px',
+                lineHeight: block.lineHeight || '1.6',
+                fontWeight: block.fontWeight || undefined,
+                maxWidth: block.textMaxWidth || '36rem'
+              }}
             >
               {block.blockParagraph}
             </p>
           )}
 
           {block.buttonText && (
-            block.buttonLink ? (
-              <a
-                href={block.buttonLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-8 inline-block bg-primary-container text-on-primary px-8 py-3 rounded-DEFAULT font-label font-semibold tracking-wide hover:opacity-90 transition-all pointer-events-auto shadow-md"
-              >
-                {block.buttonText}
-              </a>
-            ) : (
-              <button className="mt-8 bg-primary-container text-on-primary px-8 py-3 rounded-DEFAULT font-label font-semibold tracking-wide hover:opacity-90 transition-all pointer-events-auto shadow-md">
-                {block.buttonText}
-              </button>
-            )
+            <div
+              className="mt-8 flex flex-wrap gap-4 pointer-events-auto"
+              style={{ justifyContent: block.textAlign === 'center' ? 'center' : (block.textAlign === 'right' ? 'flex-end' : 'flex-start') }}
+            >
+              {block.buttonLink ? (
+                <a
+                  href={block.buttonLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block bg-primary-container text-on-primary px-8 py-3.5 rounded-full font-label font-semibold tracking-wide hover:opacity-90 active:scale-[0.98] transition-all shadow-md"
+                >
+                  {block.buttonText}
+                </a>
+              ) : (
+                <button className="bg-primary-container text-on-primary px-8 py-3.5 rounded-full font-label font-semibold tracking-wide hover:opacity-90 active:scale-[0.98] transition-all shadow-md">
+                  {block.buttonText}
+                </button>
+              )}
+              {block.buttonText2 && block.buttonLink2 && (
+                <a
+                  href={block.buttonLink2}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="secondary-cta-btn inline-block px-8 py-3.5 rounded-full font-label font-semibold tracking-wide transition-all active:scale-[0.98]"
+                  style={{
+                    border: `1.5px solid ${block.textColor || '#163428'}66`,
+                    color: block.textColor || '#163428',
+                    '--secondary-cta-bg': block.textColor || '#163428',
+                    '--secondary-cta-fg': block.bgColor || '#fff9ef'
+                  } as any}
+                >
+                  {block.buttonText2}
+                </a>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -262,6 +514,22 @@ export default function Home() {
   const [previewMode, setPreviewMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [content, setContent] = useState<any>(contentData);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [lightbox, setLightbox] = useState<{ images: string[]; index: number } | null>(null);
+
+  useEffect(() => {
+    if (!lightbox) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setLightbox(null);
+      if (e.key === 'ArrowRight') {
+        setLightbox((l) => (l ? { ...l, index: (l.index + 1) % l.images.length } : l));
+      }
+      if (e.key === 'ArrowLeft') {
+        setLightbox((l) => (l ? { ...l, index: (l.index - 1 + l.images.length) % l.images.length } : l));
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [lightbox]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -304,28 +572,38 @@ export default function Home() {
       />
 
       {/* TopNavBar */}
-      <nav className="fixed top-0 w-full z-50 bg-[#fff9ef]/80 dark:bg-[#1d1b16]/80 backdrop-blur-xl border-b border-outline-variant/10 transition-all duration-300">
-        <div className="flex justify-between items-center max-w-7xl mx-auto px-5 md:px-8 py-4 md:py-6 w-full">
-          <a className="hover:opacity-80 transition-all duration-300 block" href="#">
-            <img src="/logo/logo_negro.png" alt="Tiny Puertecillo" className="h-10 md:h-14 w-auto block dark:hidden" />
-            <img src="/logo/logo_blanco.png" alt="Tiny Puertecillo" className="h-10 md:h-14 w-auto hidden dark:block" />
+      <nav className="fixed top-0 w-full z-50 bg-[#fff9ef]/85 dark:bg-[#1d1b16]/85 backdrop-blur-xl border-b border-outline-variant/10 transition-all duration-300">
+        <div className="flex justify-between items-center max-w-7xl mx-auto px-5 md:px-8 py-2 md:py-3 w-full">
+          <a className="hover:opacity-80 transition-all duration-300 block shrink-0 -my-1" href="#">
+            <img src="/logo/logo_negro.png" alt="Tiny Puertecillo" className="h-14 md:h-20 w-auto block dark:hidden" />
+            <img src="/logo/logo_blanco.png" alt="Tiny Puertecillo" className="h-14 md:h-20 w-auto hidden dark:block" />
           </a>
           <div className="hidden md:flex items-center space-x-10">
             <a className="text-[#163428] dark:text-[#fff9ef] border-b-2 border-[#964828] pb-1 font-label text-sm tracking-wide" href="#">Inicio</a>
-            <a className="text-[#1d1b16]/70 dark:text-[#f3ede4]/70 hover:text-[#163428] transition-colors font-label text-sm tracking-wide" href="#lienzo">Las Tiny</a>
-            <a className="text-[#1d1b16]/70 dark:text-[#f3ede4]/70 hover:text-[#163428] transition-colors font-label text-sm tracking-wide" href="#contacto">Contacto</a>
+            <a className="text-[#1d1b16]/70 dark:text-[#f3ede4]/70 hover:text-[#163428] dark:hover:text-[#fff9ef] transition-colors font-label text-sm tracking-wide pb-1 border-b-2 border-transparent hover:border-[#964828]/50" href="#lienzo">Las Tiny</a>
+            <a className="text-[#1d1b16]/70 dark:text-[#f3ede4]/70 hover:text-[#163428] dark:hover:text-[#fff9ef] transition-colors font-label text-sm tracking-wide pb-1 border-b-2 border-transparent hover:border-[#964828]/50" href="#contacto">Contacto</a>
           </div>
-          <div className="flex items-center gap-2 md:gap-0">
-            <a
-              href="https://www.airbnb.cl/rooms/1702295511791817167"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-primary-container text-on-primary px-4 md:px-8 py-2 md:py-3 rounded-DEFAULT font-label font-semibold tracking-wide text-sm md:text-base hover:opacity-90 transition-all inline-block"
-            >
-              Reservar
-            </a>
+          <div className="flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-1 rounded-full border border-[#163428]/15 dark:border-[#fff9ef]/20 bg-white/50 dark:bg-white/5 p-1">
+              <a
+                href={AIRBNB_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-primary-container text-on-primary px-5 lg:px-6 py-2.5 rounded-full font-label font-semibold tracking-wide text-sm hover:opacity-90 active:scale-[0.97] transition-all inline-block whitespace-nowrap shadow-sm"
+              >
+                Airbnb
+              </a>
+              <a
+                href={BOOKING_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#163428] dark:text-[#fff9ef] px-5 lg:px-6 py-2.5 rounded-full font-label font-semibold tracking-wide text-sm hover:bg-[#163428]/8 dark:hover:bg-[#fff9ef]/10 active:scale-[0.97] transition-all inline-block whitespace-nowrap"
+              >
+                Booking.com
+              </a>
+            </div>
             <button
-              className="md:hidden p-2 ml-1 text-[#1d1b16] dark:text-[#f9f3ea]"
+              className="md:hidden p-2 text-[#1d1b16] dark:text-[#f9f3ea]"
               aria-label="Abrir menú"
               aria-expanded={mobileMenuOpen}
               onClick={() => setMobileMenuOpen((v) => !v)}
@@ -343,10 +621,30 @@ export default function Home() {
               transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
               className="md:hidden overflow-hidden bg-[#fff9ef] dark:bg-[#1d1b16] border-t border-outline-variant/10"
             >
-              <div className="flex flex-col px-5 py-4 gap-4">
-                <a onClick={() => setMobileMenuOpen(false)} className="text-[#163428] dark:text-[#fff9ef] font-label text-base tracking-wide" href="#">Inicio</a>
-                <a onClick={() => setMobileMenuOpen(false)} className="text-[#1d1b16]/80 dark:text-[#f3ede4]/80 font-label text-base tracking-wide" href="#lienzo">Las Tiny</a>
-                <a onClick={() => setMobileMenuOpen(false)} className="text-[#1d1b16]/80 dark:text-[#f3ede4]/80 font-label text-base tracking-wide" href="#contacto">Contacto</a>
+              <div className="flex flex-col px-5 py-5 gap-5">
+                <div className="flex flex-col gap-2.5">
+                  <a
+                    href={AIRBNB_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-primary-container text-on-primary text-center px-6 py-3.5 rounded-full font-label font-semibold tracking-wide text-sm hover:opacity-90 active:scale-[0.98] transition-all shadow-sm"
+                  >
+                    Reservar en Airbnb
+                  </a>
+                  <a
+                    href={BOOKING_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="border-[1.5px] border-[#163428]/40 dark:border-[#fff9ef]/40 text-[#163428] dark:text-[#fff9ef] text-center px-6 py-3.5 rounded-full font-label font-semibold tracking-wide text-sm hover:bg-[#163428]/8 dark:hover:bg-[#fff9ef]/10 active:scale-[0.98] transition-all"
+                  >
+                    Reservar en Booking.com
+                  </a>
+                </div>
+                <div className="flex flex-col gap-4 border-t border-outline-variant/10 pt-4">
+                  <a onClick={() => setMobileMenuOpen(false)} className="text-[#163428] dark:text-[#fff9ef] font-label text-base tracking-wide" href="#">Inicio</a>
+                  <a onClick={() => setMobileMenuOpen(false)} className="text-[#1d1b16]/80 dark:text-[#f3ede4]/80 font-label text-base tracking-wide" href="#lienzo">Las Tiny</a>
+                  <a onClick={() => setMobileMenuOpen(false)} className="text-[#1d1b16]/80 dark:text-[#f3ede4]/80 font-label text-base tracking-wide" href="#contacto">Contacto</a>
+                </div>
               </div>
             </motion.div>
           )}
@@ -371,7 +669,7 @@ export default function Home() {
                   initial={{ opacity: 0, y: 40 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-                  className="text-white font-serif text-4xl sm:text-5xl md:text-8xl leading-[1.1] md:leading-tight tracking-tight mb-6"
+                  className="text-white font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl leading-[1.08] tracking-tight mb-6"
                 >
                   {heroContent.title1}
                 </motion.h1>
@@ -435,6 +733,7 @@ export default function Home() {
                   key={block.id || idx}
                   block={block}
                   previewMode={previewMode}
+                  onOpenGallery={(imgs, index) => setLightbox({ images: imgs, index })}
                 />
               ))}
             </div>
@@ -443,33 +742,137 @@ export default function Home() {
       </main>
 
       {/* Footer */}
-      <footer id="contacto" className="w-full py-16 px-8 bg-[#f3ede4] dark:bg-[#163428] border-t border-outline-variant/10">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-7xl mx-auto w-full">
-          <div className="space-y-6">
+      <footer id="contacto" className="relative w-full pt-20 pb-10 px-8 bg-[#f3ede4] dark:bg-[#163428] overflow-hidden">
+        <div
+          className="absolute top-0 left-0 right-0 h-[3px]"
+          style={{ background: 'linear-gradient(90deg, #964828, #163428, #964828)' }}
+        />
+        <div
+          className="pointer-events-none absolute -top-32 -right-32 w-96 h-96 rounded-full opacity-[0.06] dark:opacity-[0.08]"
+          style={{ background: 'radial-gradient(circle, #964828, transparent 70%)' }}
+        />
+        <div className="relative grid grid-cols-1 md:grid-cols-[1.4fr_1fr_1fr] gap-14 md:gap-10 max-w-7xl mx-auto w-full items-start text-center md:text-left">
+          <div className="flex flex-col items-center md:items-start gap-6">
             <img
               src="/logo/logo_negro_clean.png"
               alt="Tiny Puertecillo Logo"
-              className="h-16 w-auto object-contain dark:invert"
+              className="h-28 w-auto object-contain dark:invert -ml-1"
             />
-            <p className="text-[#1d1b16] dark:text-[#f9f3ea] font-label text-sm opacity-70">
-              Experiencias arquitectónicas en el borde costero chileno.
+            <p className="text-[#1d1b16] dark:text-[#f9f3ea] font-body text-[15px] opacity-70 max-w-xs leading-relaxed">
+              Experiencias arquitectónicas en el borde costero chileno, entre el bosque y el mar.
             </p>
-          </div>
-          <div className="flex flex-col gap-4">
-            <p className="font-label text-xs uppercase tracking-widest text-[#163428] dark:text-[#f9f3ea] mb-2">Legal &amp; Social</p>
-            <div className="flex flex-wrap gap-x-8 gap-y-4">
-              <a className="text-[#1d1b16] dark:text-[#f9f3ea] opacity-60 hover:opacity-100 transition-opacity underline decoration-[#964828] underline-offset-4 font-label text-sm" href="#">Privacidad</a>
-              <a className="text-[#1d1b16] dark:text-[#f9f3ea] opacity-60 hover:opacity-100 transition-opacity font-label text-sm" href="#">Términos</a>
-              <a className="text-[#1d1b16] dark:text-[#f9f3ea] opacity-60 hover:opacity-100 transition-opacity font-label text-sm" href="#">Sustentabilidad</a>
+            <div className="hidden md:flex items-center gap-1 rounded-full border border-[#163428]/15 dark:border-[#fff9ef]/20 bg-white/40 dark:bg-white/5 p-1">
+              <a
+                href={AIRBNB_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-primary-container text-on-primary px-5 py-2 rounded-full font-label font-semibold tracking-wide text-xs hover:opacity-90 active:scale-[0.97] transition-all"
+              >
+                Airbnb
+              </a>
+              <a
+                href={BOOKING_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#163428] dark:text-[#fff9ef] px-5 py-2 rounded-full font-label font-semibold tracking-wide text-xs hover:bg-[#163428]/8 dark:hover:bg-[#fff9ef]/10 active:scale-[0.97] transition-all"
+              >
+                Booking.com
+              </a>
             </div>
           </div>
-          <div className="flex flex-col md:items-end justify-between">
-            <p className="text-xs font-label all-caps tracking-widest text-[#1d1b16] dark:text-[#f9f3ea] opacity-60">
-              © 2026 Tiny Puertecillo SpA. Architectural Retreats.
-            </p>
+          <div className="flex flex-col items-center md:items-start gap-4">
+            <p className="font-label text-xs uppercase tracking-widest text-[#964828] font-bold">Navegación</p>
+            <div className="flex flex-col items-center md:items-start gap-3">
+              <a className="text-[#1d1b16] dark:text-[#f9f3ea] opacity-75 hover:opacity-100 hover:text-[#964828] dark:hover:text-[#fff9ef] transition-all font-label text-sm" href="#">Inicio</a>
+              <a className="text-[#1d1b16] dark:text-[#f9f3ea] opacity-75 hover:opacity-100 hover:text-[#964828] dark:hover:text-[#fff9ef] transition-all font-label text-sm" href="#lienzo">Las Tiny</a>
+              <a className="text-[#1d1b16] dark:text-[#f9f3ea] opacity-75 hover:opacity-100 hover:text-[#964828] dark:hover:text-[#fff9ef] transition-all font-label text-sm" href="#contacto">Contacto</a>
+            </div>
+          </div>
+          <div className="flex flex-col items-center md:items-start gap-4">
+            <p className="font-label text-xs uppercase tracking-widest text-[#964828] font-bold">Legal &amp; Social</p>
+            <div className="flex flex-col items-center md:items-start gap-3">
+              <a className="text-[#1d1b16] dark:text-[#f9f3ea] opacity-75 hover:opacity-100 hover:text-[#964828] dark:hover:text-[#fff9ef] transition-all font-label text-sm" href="#">Privacidad</a>
+              <a className="text-[#1d1b16] dark:text-[#f9f3ea] opacity-75 hover:opacity-100 hover:text-[#964828] dark:hover:text-[#fff9ef] transition-all font-label text-sm" href="#">Términos</a>
+              <a className="text-[#1d1b16] dark:text-[#f9f3ea] opacity-75 hover:opacity-100 hover:text-[#964828] dark:hover:text-[#fff9ef] transition-all font-label text-sm" href="#">Sustentabilidad</a>
+            </div>
           </div>
         </div>
+        <div className="relative flex md:hidden justify-center mt-10">
+          <div className="flex items-center gap-1 rounded-full border border-[#163428]/15 dark:border-[#fff9ef]/20 bg-white/40 dark:bg-white/5 p-1">
+            <a href={AIRBNB_URL} target="_blank" rel="noopener noreferrer" className="bg-primary-container text-on-primary px-5 py-2 rounded-full font-label font-semibold tracking-wide text-xs">Airbnb</a>
+            <a href={BOOKING_URL} target="_blank" rel="noopener noreferrer" className="text-[#163428] dark:text-[#fff9ef] px-5 py-2 rounded-full font-label font-semibold tracking-wide text-xs">Booking.com</a>
+          </div>
+        </div>
+        <div className="relative max-w-7xl mx-auto w-full mt-14 pt-6 border-t border-[#1d1b16]/10 dark:border-[#f9f3ea]/10 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <p className="text-xs font-label tracking-widest text-[#1d1b16] dark:text-[#f9f3ea] opacity-50 uppercase">
+            © 2026 Tiny Puertecillo SpA
+          </p>
+          <p className="text-xs font-label tracking-widest text-[#1d1b16] dark:text-[#f9f3ea] opacity-50 uppercase">
+            Architectural Retreats · Puertecillo, Chile
+          </p>
+        </div>
       </footer>
+
+      {/* Gallery Lightbox */}
+      <AnimatePresence>
+        {lightbox && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 z-[3000] bg-black/90 flex items-center justify-center p-4 md:p-10"
+            onClick={() => setLightbox(null)}
+          >
+            <button
+              onClick={(e) => { e.stopPropagation(); setLightbox(null); }}
+              className="absolute top-5 right-5 text-white/80 hover:text-white p-2 z-10"
+              aria-label="Cerrar"
+            >
+              <X className="w-8 h-8" />
+            </button>
+            {lightbox.images.length > 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLightbox((l) => (l ? { ...l, index: (l.index - 1 + l.images.length) % l.images.length } : l));
+                }}
+                className="absolute left-2 md:left-8 text-white/80 hover:text-white p-3 z-10"
+                aria-label="Anterior"
+              >
+                <ChevronLeft className="w-8 h-8 md:w-10 md:h-10" />
+              </button>
+            )}
+            <motion.img
+              key={lightbox.index}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
+              src={lightbox.images[lightbox.index]}
+              alt=""
+              className="max-w-full max-h-full object-contain rounded-lg"
+              onClick={(e) => e.stopPropagation()}
+            />
+            {lightbox.images.length > 1 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLightbox((l) => (l ? { ...l, index: (l.index + 1) % l.images.length } : l));
+                }}
+                className="absolute right-2 md:right-8 text-white/80 hover:text-white p-3 z-10"
+                aria-label="Siguiente"
+              >
+                <ChevronRight className="w-8 h-8 md:w-10 md:h-10" />
+              </button>
+            )}
+            {lightbox.images.length > 1 && (
+              <div className="absolute bottom-5 left-1/2 -translate-x-1/2 text-white/70 font-label text-sm tracking-wide">
+                {lightbox.index + 1} / {lightbox.images.length}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <style jsx global>{`
         @media (min-width: 769px) and (max-width: 1024px) {
@@ -479,6 +882,19 @@ export default function Home() {
             --final-span-w: var(--t-span-w) !important;
             --final-span-h: var(--t-span-h) !important;
           }
+        }
+        .secondary-cta-btn:hover {
+          background-color: var(--secondary-cta-bg);
+          color: var(--secondary-cta-fg);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+          width: 0;
+          height: 0;
+        }
+        .hide-scrollbar {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
         }
       `}</style>
     </div>
