@@ -220,7 +220,13 @@ const BentoBlock = ({ block, previewMode, onOpenGallery }: { block: any; preview
                     href={block.buttonLink2}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-block text-center border-2 border-[#163428] dark:border-[#fff9ef] text-[#163428] dark:text-[#fff9ef] px-8 py-3 rounded-DEFAULT font-label font-semibold tracking-wide hover:bg-[#163428] hover:text-white dark:hover:bg-[#fff9ef] dark:hover:text-[#163428] transition-all"
+                    className="secondary-cta-btn inline-block text-center px-8 py-3 rounded-DEFAULT font-label font-semibold tracking-wide transition-all"
+                    style={{
+                      border: `2px solid ${block.textColor || '#163428'}`,
+                      color: block.textColor || '#163428',
+                      '--secondary-cta-bg': block.textColor || '#163428',
+                      '--secondary-cta-fg': block.bgColor || '#fff9ef'
+                    } as any}
                   >
                     {block.buttonText2}
                   </a>
@@ -478,7 +484,13 @@ const BentoBlock = ({ block, previewMode, onOpenGallery }: { block: any; preview
                   href={block.buttonLink2}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-block border-2 border-[#163428] dark:border-[#fff9ef] text-[#163428] dark:text-[#fff9ef] px-8 py-3 rounded-DEFAULT font-label font-semibold tracking-wide hover:bg-[#163428] hover:text-white dark:hover:bg-[#fff9ef] dark:hover:text-[#163428] transition-all"
+                  className="secondary-cta-btn inline-block px-8 py-3 rounded-DEFAULT font-label font-semibold tracking-wide transition-all"
+                  style={{
+                    border: `2px solid ${block.textColor || '#163428'}`,
+                    color: block.textColor || '#163428',
+                    '--secondary-cta-bg': block.textColor || '#163428',
+                    '--secondary-cta-fg': block.bgColor || '#fff9ef'
+                  } as any}
                 >
                   {block.buttonText2}
                 </a>
@@ -827,6 +839,10 @@ export default function Home() {
             --final-span-w: var(--t-span-w) !important;
             --final-span-h: var(--t-span-h) !important;
           }
+        }
+        .secondary-cta-btn:hover {
+          background-color: var(--secondary-cta-bg);
+          color: var(--secondary-cta-fg);
         }
       `}</style>
     </div>
