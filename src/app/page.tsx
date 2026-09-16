@@ -304,11 +304,13 @@ const BentoBlock = ({ block, previewMode, onOpenGallery }: { block: any; preview
       {/* Text rendering */}
       {(isText || isBoth) && (
         <div
-          className={`absolute inset-0 z-10 flex flex-col justify-end p-8 md:p-10 pointer-events-none`}
+          className={`absolute inset-0 z-10 flex flex-col pointer-events-none`}
           style={{
             color: block.textColor || '#1d1b16',
             textAlign: block.textAlign || 'left',
-            alignItems: block.textAlign === 'center' ? 'center' : (block.textAlign === 'right' ? 'flex-end' : 'flex-start')
+            alignItems: block.textAlign === 'center' ? 'center' : (block.textAlign === 'right' ? 'flex-end' : 'flex-start'),
+            justifyContent: block.textVerticalAlign === 'center' ? 'center' : (block.textVerticalAlign === 'top' ? 'flex-start' : 'flex-end'),
+            padding: block.textPadding || '40px'
           }}
         >
           {block.label && !isBoth && (
@@ -319,8 +321,13 @@ const BentoBlock = ({ block, previewMode, onOpenGallery }: { block: any; preview
           
           {block.blockTitle && (
             <h3
-              className={`font-serif leading-tight tracking-tight mb-4 ${isBoth ? 'text-white text-3xl' : 'text-primary text-4xl'}`}
-              style={{ color: block.textColor }}
+              className={`font-serif tracking-tight mb-4 ${isBoth ? 'text-white' : 'text-primary'}`}
+              style={{
+                color: block.textColor,
+                fontSize: block.titleSize || (isBoth ? '30px' : '36px'),
+                lineHeight: block.titleLineHeight || '1.2',
+                textTransform: (block.textTransform as any) || 'none'
+              }}
             >
               {block.blockTitle}
             </h3>
@@ -328,8 +335,15 @@ const BentoBlock = ({ block, previewMode, onOpenGallery }: { block: any; preview
           
           {block.blockParagraph && (
             <p
-              className={`font-body text-base leading-relaxed max-w-xl ${isBoth ? 'text-white/80' : 'text-on-surface-variant'}`}
-              style={{ color: block.textColor ? `${block.textColor}dd` : undefined, whiteSpace: 'pre-line' }}
+              className={`font-body ${isBoth ? 'text-white/80' : 'text-on-surface-variant'}`}
+              style={{
+                color: block.textColor ? `${block.textColor}dd` : undefined,
+                whiteSpace: 'pre-line',
+                fontSize: block.paragraphSize || '16px',
+                lineHeight: block.lineHeight || '1.6',
+                fontWeight: block.fontWeight || undefined,
+                maxWidth: block.textMaxWidth || '36rem'
+              }}
             >
               {block.blockParagraph}
             </p>
