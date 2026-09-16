@@ -72,7 +72,7 @@ const BentoBlock = ({ block, previewMode, onOpenGallery }: { block: any; preview
             </div>
           )}
           <div
-            className="flex gap-3 overflow-x-auto pb-5 pl-5 pr-2 snap-x snap-mandatory"
+            className="hide-scrollbar flex gap-3 overflow-x-auto pb-5 pl-5 pr-2 snap-x snap-mandatory"
             style={{ scrollbarWidth: 'none' }}
           >
             {images.map((src: string, i: number) => (
@@ -81,7 +81,7 @@ const BentoBlock = ({ block, previewMode, onOpenGallery }: { block: any; preview
                 type="button"
                 onClick={() => onOpenGallery && onOpenGallery(images, i)}
                 className="relative shrink-0 snap-start overflow-hidden rounded-2xl"
-                style={{ width: '70%', aspectRatio: '4 / 5' }}
+                style={{ width: '78%', aspectRatio: '4 / 5' }}
               >
                 <img src={src} alt={`${block.label || 'Galería'} ${i + 1}`} className="w-full h-full object-cover" />
               </button>
@@ -669,7 +669,7 @@ export default function Home() {
                   initial={{ opacity: 0, y: 40 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
-                  className="text-white font-serif text-4xl sm:text-5xl md:text-8xl leading-[1.1] md:leading-tight tracking-tight mb-6"
+                  className="text-white font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl leading-[1.08] tracking-tight mb-6"
                 >
                   {heroContent.title1}
                 </motion.h1>
@@ -886,6 +886,15 @@ export default function Home() {
         .secondary-cta-btn:hover {
           background-color: var(--secondary-cta-bg);
           color: var(--secondary-cta-fg);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+          display: none;
+          width: 0;
+          height: 0;
+        }
+        .hide-scrollbar {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
         }
       `}</style>
     </div>
