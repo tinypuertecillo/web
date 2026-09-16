@@ -39,8 +39,11 @@ const BentoBlock = ({ block, previewMode, onOpenGallery }: { block: any; preview
   const isText = block.type === 'text';
   const isBoth = block.type === 'both';
   const isMosaic = block.type === 'mosaic';
+  const mosaicLayout = block.mosaicLayout || 'hero';
   const mosaicSmall = images.slice(1, 5);
   const mosaicRemaining = images.length - 1 - mosaicSmall.length;
+  const stripShown = images.slice(0, 5);
+  const stripRemaining = images.length - stripShown.length;
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
@@ -49,6 +52,42 @@ const BentoBlock = ({ block, previewMode, onOpenGallery }: { block: any; preview
   };
 
   if (currentMode === 'mobile') {
+    if (isMosaic && images.length > 0 && mosaicLayout === 'strip') {
+      return (
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-60px' }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full overflow-hidden mb-5"
+          style={{ borderRadius: block.borderRadius || '20px', backgroundColor: block.bgColor || '#f3ede4' }}
+        >
+          {block.label && (
+            <div className="px-5 pt-4 pb-3 flex items-center justify-between">
+              <span className="text-secondary font-label font-bold tracking-widest text-xs uppercase">{block.label}</span>
+              <span className="font-label text-xs opacity-50">{images.length} fotos</span>
+            </div>
+          )}
+          <div
+            className="flex gap-3 overflow-x-auto pb-5 pl-5 pr-2 snap-x snap-mandatory"
+            style={{ scrollbarWidth: 'none' }}
+          >
+            {images.map((src: string, i: number) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => onOpenGallery && onOpenGallery(images, i)}
+                className="relative shrink-0 snap-start overflow-hidden rounded-2xl"
+                style={{ width: '70%', aspectRatio: '4 / 5' }}
+              >
+                <img src={src} alt={`${block.label || 'Galería'} ${i + 1}`} className="w-full h-full object-cover" />
+              </button>
+            ))}
+            <div className="shrink-0 w-2" />
+          </div>
+        </motion.div>
+      );
+    }
     if (isMosaic && images.length > 0) {
       return (
         <motion.div
@@ -241,45 +280,93 @@ const BentoBlock = ({ block, previewMode, onOpenGallery }: { block: any; preview
               <span className="font-label text-xs text-on-surface-variant opacity-60">{images.length} fotos</span>
             </div>
           )}
-          <div className="flex-1 flex gap-2 min-h-0">
-            <button
-              type="button"
-              onClick={() => onOpenGallery && onOpenGallery(images, 0)}
-              className="relative flex-[1.1] h-full overflow-hidden rounded-2xl group/mosaic"
-            >
-              <img
-                src={images[0]}
-                alt={block.label || 'Interior'}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover/mosaic:scale-105"
-              />
-            </button>
-            {mosaicSmall.length > 0 && (
-              <div className="flex-1 grid grid-cols-2 grid-rows-2 gap-2 h-full">
-                {mosaicSmall.map((src: string, i: number) => {
-                  const isLast = i === mosaicSmall.length - 1 && mosaicRemaining > 0;
-                  return (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => onOpenGallery && onOpenGallery(images, i + 1)}
-                      className="relative overflow-hidden rounded-xl group/mosaic"
-                    >
-                      <img
-                        src={src}
-                        alt={`${block.label || 'Interior'} ${i + 2}`}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover/mosaic:scale-105"
-                      />
-                      {isLast && (
-                        <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
-                          <span className="text-white font-label font-semibold text-lg">+{mosaicRemaining}</span>
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
+          {mosaicLayout === 'strip' ? (
+            <div className="flex-1 flex flex-col gap-2 min-h-0">
+              <div className="flex-[1.15] flex gap-2 min-h-0">
+                {stripShown.slice(0, 2).map((src: string, i: number) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => onOpenGallery && onOpenGallery(images, i)}
+                    className="relative flex-1 h-full overflow-hidden rounded-2xl group/mosaic"
+                  >
+                    <img
+                      src={src}
+                      alt={`${block.label || 'Terraza'} ${i + 1}`}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover/mosaic:scale-105"
+                    />
+                  </button>
+                ))}
               </div>
-            )}
-          </div>
+              {stripShown.length > 2 && (
+                <div className="flex-1 flex gap-2 min-h-0">
+                  {stripShown.slice(2, 5).map((src: string, i: number) => {
+                    const realIndex = i + 2;
+                    const isLast = realIndex === stripShown.length - 1 && stripRemaining > 0;
+                    return (
+                      <button
+                        key={realIndex}
+                        type="button"
+                        onClick={() => onOpenGallery && onOpenGallery(images, realIndex)}
+                        className="relative flex-1 h-full overflow-hidden rounded-xl group/mosaic"
+                      >
+                        <img
+                          src={src}
+                          alt={`${block.label || 'Terraza'} ${realIndex + 1}`}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover/mosaic:scale-105"
+                        />
+                        {isLast && (
+                          <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
+                            <span className="text-white font-label font-semibold text-lg">+{stripRemaining}</span>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex-1 flex gap-2 min-h-0">
+              <button
+                type="button"
+                onClick={() => onOpenGallery && onOpenGallery(images, 0)}
+                className="relative flex-[1.1] h-full overflow-hidden rounded-2xl group/mosaic"
+              >
+                <img
+                  src={images[0]}
+                  alt={block.label || 'Interior'}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover/mosaic:scale-105"
+                />
+              </button>
+              {mosaicSmall.length > 0 && (
+                <div className="flex-1 grid grid-cols-2 grid-rows-2 gap-2 h-full">
+                  {mosaicSmall.map((src: string, i: number) => {
+                    const isLast = i === mosaicSmall.length - 1 && mosaicRemaining > 0;
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => onOpenGallery && onOpenGallery(images, i + 1)}
+                        className="relative overflow-hidden rounded-xl group/mosaic"
+                      >
+                        <img
+                          src={src}
+                          alt={`${block.label || 'Interior'} ${i + 2}`}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover/mosaic:scale-105"
+                        />
+                        {isLast && (
+                          <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
+                            <span className="text-white font-label font-semibold text-lg">+{mosaicRemaining}</span>
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
