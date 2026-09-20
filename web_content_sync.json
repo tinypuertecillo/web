@@ -162,7 +162,6 @@
           "id": "block_gallery_terraza",
           "label": "Terraza",
           "type": "mosaic",
-          "mosaicLayout": "strip",
           "span": "31x25",
           "col": 17,
           "row": 68,
