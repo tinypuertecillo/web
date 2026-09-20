@@ -6,7 +6,6 @@ import { Layers, MapPin, Calendar, Compass, Shield, Wind, Flame, Coffee, Menu, X
 import contentData from '../../web_content_sync.json';
 
 const AIRBNB_URL = 'https://www.airbnb.cl/rooms/1702295511791817167';
-const BOOKING_URL = 'https://www.booking.com/hotel/cl/tiny-puertecillo-entre-el-bosque-y-el-mar.es.html?aid=2311236&label=es-cl-booking-desktop-LVoANQ22b9Q1GvFzlorfdQS652829001271%3Apl%3Ata%3Ap1%3Ap2%3Aac%3Aap%3Aneg%3Afi%3Atikwd-65526620%3Alp1003316%3Ali%3Adec%3Adm';
 
 const BentoBlock = ({ block, previewMode, onOpenGallery }: { block: any; previewMode?: string; onOpenGallery?: (images: string[], index: number) => void }) => {
   const currentMode = previewMode || 'desktop';
@@ -593,14 +592,6 @@ export default function Home() {
               >
                 Airbnb
               </a>
-              <a
-                href={BOOKING_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#163428] dark:text-[#fff9ef] px-5 lg:px-6 py-2.5 rounded-full font-label font-semibold tracking-wide text-sm hover:bg-[#163428]/8 dark:hover:bg-[#fff9ef]/10 active:scale-[0.97] transition-all inline-block whitespace-nowrap"
-              >
-                Booking.com
-              </a>
             </div>
             <button
               className="md:hidden p-2 text-[#1d1b16] dark:text-[#f9f3ea]"
@@ -630,14 +621,6 @@ export default function Home() {
                     className="bg-primary-container text-on-primary text-center px-6 py-3.5 rounded-full font-label font-semibold tracking-wide text-sm hover:opacity-90 active:scale-[0.98] transition-all shadow-sm"
                   >
                     Reservar en Airbnb
-                  </a>
-                  <a
-                    href={BOOKING_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="border-[1.5px] border-[#163428]/40 dark:border-[#fff9ef]/40 text-[#163428] dark:text-[#fff9ef] text-center px-6 py-3.5 rounded-full font-label font-semibold tracking-wide text-sm hover:bg-[#163428]/8 dark:hover:bg-[#fff9ef]/10 active:scale-[0.98] transition-all"
-                  >
-                    Reservar en Booking.com
                   </a>
                 </div>
                 <div className="flex flex-col gap-4 border-t border-outline-variant/10 pt-4">
@@ -770,14 +753,6 @@ export default function Home() {
               >
                 Airbnb
               </a>
-              <a
-                href={BOOKING_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[#163428] dark:text-[#fff9ef] px-5 py-2 rounded-full font-label font-semibold tracking-wide text-xs hover:bg-[#163428]/8 dark:hover:bg-[#fff9ef]/10 active:scale-[0.97] transition-all"
-              >
-                Booking.com
-              </a>
             </div>
           </div>
           <div className="flex flex-col items-center md:items-start gap-4">
@@ -800,7 +775,6 @@ export default function Home() {
         <div className="relative flex md:hidden justify-center mt-10">
           <div className="flex items-center gap-1 rounded-full border border-[#163428]/15 dark:border-[#fff9ef]/20 bg-white/40 dark:bg-white/5 p-1">
             <a href={AIRBNB_URL} target="_blank" rel="noopener noreferrer" className="bg-primary-container text-on-primary px-5 py-2 rounded-full font-label font-semibold tracking-wide text-xs">Airbnb</a>
-            <a href={BOOKING_URL} target="_blank" rel="noopener noreferrer" className="text-[#163428] dark:text-[#fff9ef] px-5 py-2 rounded-full font-label font-semibold tracking-wide text-xs">Booking.com</a>
           </div>
         </div>
         <div className="relative max-w-7xl mx-auto w-full mt-14 pt-6 border-t border-[#1d1b16]/10 dark:border-[#f9f3ea]/10 flex flex-col sm:flex-row items-center justify-between gap-3">
