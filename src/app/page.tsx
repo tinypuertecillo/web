@@ -665,7 +665,7 @@ export default function Home() {
       <main className="flex-grow">
         {/* Hero Section */}
         {heroContent && !heroContent.hidden && (
-          <section className="relative min-h-screen flex items-end pb-24 px-8 overflow-hidden">
+          <section className="relative min-h-screen flex items-end pt-28 pb-24 px-8 overflow-hidden">
             <div className="absolute inset-0 z-0">
               <img
                 alt="Tiny Puertecillo Hero"
