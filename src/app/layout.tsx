@@ -14,9 +14,9 @@ const manrope = Manrope({
 });
 
 const SITE_URL = "https://tinypuertecillo.cl";
-const SITE_TITLE = "Cabañas Tiny Puertecillo | Arriendo entre el bosque y el mar";
+const SITE_TITLE = "Tiny House Puertecillo | Arriendo entre el bosque y el mar";
 const SITE_DESCRIPTION =
-  "Arrienda una Tiny House de diseño en Puertecillo, Navidad, a 15 min de la playa y el surf. Terraza privada, bosque y mar. Reserva por Airbnb o WhatsApp.";
+  "Arrienda tu Tiny House de diseño en Puertecillo, Navidad, a 15 min de la playa y el surf. Terraza privada, bosque y mar. Reserva por Airbnb o WhatsApp.";
 const OG_IMAGE = `${SITE_URL}/hero/foto_01.jpg`;
 
 export const metadata: Metadata = {
@@ -27,9 +27,9 @@ export const metadata: Metadata = {
   },
   description: SITE_DESCRIPTION,
   keywords: [
-    "cabañas puertecillo",
-    "arriendo cabaña puertecillo",
     "tiny house puertecillo",
+    "arriendo tiny house puertecillo",
+    "cabañas puertecillo",
     "alojamiento puertecillo",
     "cabañas navidad o'higgins",
     "puertecillo playa",
