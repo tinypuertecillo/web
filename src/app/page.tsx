@@ -98,7 +98,7 @@ const BentoBlock = ({ block, previewMode, onOpenGallery }: { block: any; preview
                 className="relative shrink-0 snap-start overflow-hidden rounded-2xl"
                 style={{ width: '78%', aspectRatio: '4 / 5' }}
               >
-                <img src={src} alt={`${block.label || 'Galería'} ${i + 1}`} className="w-full h-full object-cover" />
+                <img src={src} alt={`${block.label || 'Galería'} ${i + 1}`} className="w-full h-full object-cover" loading="lazy" decoding="async" />
               </button>
             ))}
             <div className="shrink-0 w-2" />
@@ -129,7 +129,7 @@ const BentoBlock = ({ block, previewMode, onOpenGallery }: { block: any; preview
               className="w-full overflow-hidden rounded-2xl block mb-3"
               style={{ aspectRatio: '16 / 10' }}
             >
-              <img src={images[0]} alt={block.label || 'Interior'} className="w-full h-full object-cover" />
+              <img src={images[0]} alt={block.label || 'Interior'} className="w-full h-full object-cover" loading="lazy" decoding="async" />
             </button>
             {mosaicSmall.length > 0 && (
               <div className="grid grid-cols-4 gap-2">
@@ -143,7 +143,7 @@ const BentoBlock = ({ block, previewMode, onOpenGallery }: { block: any; preview
                       className="relative overflow-hidden rounded-lg"
                       style={{ aspectRatio: '1 / 1' }}
                     >
-                      <img src={src} alt={`${block.label || 'Interior'} ${i + 2}`} className="w-full h-full object-cover" />
+                      <img src={src} alt={`${block.label || 'Interior'} ${i + 2}`} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                       {isLast && (
                         <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
                           <span className="text-white font-label font-semibold text-sm">+{mosaicRemaining}</span>
@@ -177,6 +177,8 @@ const BentoBlock = ({ block, previewMode, onOpenGallery }: { block: any; preview
               src={images[0]}
               alt={block.label}
               className="w-full h-full object-cover"
+              loading="lazy"
+              decoding="async"
               style={{
                 borderRadius: hasText
                   ? `${block.borderRadius || '20px'} ${block.borderRadius || '20px'} 0 0`
@@ -333,6 +335,8 @@ const BentoBlock = ({ block, previewMode, onOpenGallery }: { block: any; preview
                       src={src}
                       alt={`${block.label || 'Terraza'} ${i + 1}`}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover/mosaic:scale-105"
+                      loading="lazy"
+                      decoding="async"
                     />
                   </button>
                 ))}
@@ -353,6 +357,8 @@ const BentoBlock = ({ block, previewMode, onOpenGallery }: { block: any; preview
                           src={src}
                           alt={`${block.label || 'Terraza'} ${realIndex + 1}`}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover/mosaic:scale-105"
+                          loading="lazy"
+                          decoding="async"
                         />
                         {isLast && (
                           <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
@@ -376,6 +382,8 @@ const BentoBlock = ({ block, previewMode, onOpenGallery }: { block: any; preview
                   src={images[0]}
                   alt={block.label || 'Interior'}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover/mosaic:scale-105"
+                  loading="lazy"
+                  decoding="async"
                 />
               </button>
               {mosaicSmall.length > 0 && (
@@ -393,6 +401,8 @@ const BentoBlock = ({ block, previewMode, onOpenGallery }: { block: any; preview
                           src={src}
                           alt={`${block.label || 'Interior'} ${i + 2}`}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover/mosaic:scale-105"
+                          loading="lazy"
+                          decoding="async"
                         />
                         {isLast && (
                           <div className="absolute inset-0 bg-black/55 flex items-center justify-center">
@@ -416,6 +426,8 @@ const BentoBlock = ({ block, previewMode, onOpenGallery }: { block: any; preview
             src={images[0]}
             alt={block.label}
             className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+            loading="lazy"
+            decoding="async"
             style={{
               opacity: isBoth ? 0.35 : 1,
               filter: isBoth ? 'brightness(0.6) contrast(1.1)' : 'none'
@@ -590,8 +602,8 @@ export default function Home() {
       <nav className="fixed top-0 w-full z-50 bg-[#fff9ef]/85 dark:bg-[#1d1b16]/85 backdrop-blur-xl border-b border-outline-variant/10 transition-all duration-300">
         <div className="flex justify-between items-center max-w-7xl mx-auto px-5 md:px-8 py-2 md:py-3 w-full">
           <a className="hover:opacity-80 transition-all duration-300 block shrink-0 -my-1" href="#">
-            <img src="/logo/logo_negro.png" alt="Tiny Puertecillo" className="h-14 md:h-20 w-auto block dark:hidden" />
-            <img src="/logo/logo_blanco.png" alt="Tiny Puertecillo" className="h-14 md:h-20 w-auto hidden dark:block" />
+            <img src="/logo/logo_negro.png" alt="Tiny Puertecillo" width={4000} height={2769} className="h-14 md:h-20 w-auto block dark:hidden" />
+            <img src="/logo/logo_blanco.png" alt="Tiny Puertecillo" width={4000} height={2769} className="h-14 md:h-20 w-auto hidden dark:block" />
           </a>
           <div className="hidden md:flex items-center space-x-10">
             <a className="text-[#163428] dark:text-[#fff9ef] border-b-2 border-[#964828] pb-1 font-label text-sm tracking-wide" href="#">Inicio</a>
@@ -756,6 +768,10 @@ export default function Home() {
               src="/logo/logo_negro_clean.png"
               alt="Tiny Puertecillo Logo"
               className="h-28 w-auto object-contain dark:invert -ml-1"
+              width={4000}
+              height={2769}
+              loading="lazy"
+              decoding="async"
             />
             <p className="text-[#1d1b16] dark:text-[#f9f3ea] font-body text-[15px] opacity-70 max-w-xs leading-relaxed">
               Experiencias arquitectónicas en el borde costero chileno, entre el bosque y el mar.
