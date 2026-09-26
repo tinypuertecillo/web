@@ -10,6 +10,11 @@
     "titleSize": "4rem",
     "paragraphSize": "1.4rem"
   },
+  "introduction": {
+    "label": "Cabañas en Puertecillo",
+    "title": "Tu cabaña Tiny House en Puertecillo",
+    "paragraph": "Tiny Puertecillo es un condominio de Tiny Houses en arriendo en Puertecillo, Navidad (Región de O'Higgins), a 15 minutos de la playa y las mejores olas de la zona. Cada cabaña de 35 m² tiene una terraza privada de 21 m², está pensada para desconectar entre el bosque y el mar, y se reserva fácil por Airbnb o WhatsApp."
+  },
   "sections": [
     {
       "id": "infinite_grid",
