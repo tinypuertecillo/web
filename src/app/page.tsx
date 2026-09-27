@@ -613,6 +613,12 @@ export default function Home() {
           <div className="flex items-center gap-3">
             <div className="hidden md:flex items-center gap-1 rounded-full border border-[#163428]/15 dark:border-[#fff9ef]/20 bg-white/50 dark:bg-white/5 p-1">
               <a
+                href="/reservar"
+                className="text-[#163428] dark:text-[#fff9ef] px-5 lg:px-6 py-2.5 rounded-full font-label font-semibold tracking-wide text-sm hover:opacity-80 active:scale-[0.97] transition-all inline-block whitespace-nowrap"
+              >
+                Reservar
+              </a>
+              <a
                 href={AIRBNB_URL}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -642,6 +648,13 @@ export default function Home() {
             >
               <div className="flex flex-col px-5 py-5 gap-5">
                 <div className="flex flex-col gap-2.5">
+                  <a
+                    href="/reservar"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="border-2 border-[#163428] dark:border-[#fff9ef] text-[#163428] dark:text-[#fff9ef] text-center px-6 py-3.5 rounded-full font-label font-semibold tracking-wide text-sm hover:opacity-80 active:scale-[0.98] transition-all"
+                  >
+                    Reservar en la web
+                  </a>
                   <a
                     href={AIRBNB_URL}
                     target="_blank"
