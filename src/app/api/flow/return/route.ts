@@ -7,27 +7,27 @@ export const dynamic = "force-dynamic";
 // El estado real ya se procesó en /api/flow/confirm; esto solo decide a
 // qué pantalla mandar al usuario.
 export async function POST(req: NextRequest) {
-  const form = await req.formData();
-  const token = form.get("token")?.toString();
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `${req.nextUrl.protocol}//${req.nextUrl.host}`;
+    const form = await req.formData();
+    const token = form.get("token")?.toString();
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `${req.nextUrl.protocol}//${req.nextUrl.host}`;
 
   if (!token) {
-    return NextResponse.redirect(`${siteUrl}/reservar`);
+        return NextResponse.redirect(`${siteUrl}/reservar`, 303);
   }
 
   const { data: reserva } = await supabaseAdmin
-    .from("reservas")
-    .select("id, estado")
-    .eq("flow_token", token)
-    .single();
+      .from("reservas")
+      .select("id, estado")
+      .eq("flow_token", token)
+      .single();
 
   if (reserva?.estado === "pagada") {
-    return NextResponse.redirect(`${siteUrl}/reservar/gracias?estado=pagada`);
+        return NextResponse.redirect(`${siteUrl}/reservar/gracias?estado=pagada`, 303);
   }
-  return NextResponse.redirect(`${siteUrl}/reservar/gracias?estado=pendiente`);
+    return NextResponse.redirect(`${siteUrl}/reservar/gracias?estado=pendiente`, 303);
 }
 
 export async function GET(req: NextRequest) {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `${req.nextUrl.protocol}//${req.nextUrl.host}`;
-  return NextResponse.redirect(`${siteUrl}/reservar`);
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `${req.nextUrl.protocol}//${req.nextUrl.host}`;
+    return NextResponse.redirect(`${siteUrl}/reservar`, 303);
 }
