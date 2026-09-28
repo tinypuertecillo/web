@@ -77,7 +77,8 @@ export default function SiteFooter() {
         <p className="text-xs font-label tracking-widest text-[#1d1b16] dark:text-[#f9f3ea] opacity-50 uppercase">
           Architectural Retreats · Puertecillo, Chile
         </p>
+                <a href="/admin" className="text-xs font-label tracking-widest text-[#1d1b16] dark:text-[#f9f3ea] opacity-30 hover:opacity-70 transition-opacity uppercase">Admin</a>
       </div>
     </footer>
-  );
+      );
 }
