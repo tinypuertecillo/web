@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import HuespedesAdmin from './HuespedesAdmin';
 import { precioDeNoche, type ConfigPrecios, type Tarifa } from '@/lib/pricingCore';
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -17,6 +18,7 @@ const fmtFecha = (f: string) => f.split('-').reverse().join('-');
 
 export default function TarifasAdmin({ precioBase, precioFinSemana }: { precioBase: number | null; precioFinSemana: number | null }) {
   const [descuento, setDescuento] = useState('');
+  const [descuentoGuardado, setDescuentoGuardado] = useState(0);
   const [ajustesMsg, setAjustesMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [guardandoAjustes, setGuardandoAjustes] = useState(false);
 
@@ -43,6 +45,7 @@ export default function TarifasAdmin({ precioBase, precioFinSemana }: { precioBa
   const aplicar = useCallback((data: { ajustes: { descuentoPct: number; precioFinSemana: number | null } | null; tarifas: Tarifa[] | null }) => {
     if (data.ajustes) {
       setDescuento(data.ajustes.descuentoPct ? String(data.ajustes.descuentoPct) : '');
+      setDescuentoGuardado(data.ajustes.descuentoPct);
     }
     if (data.tarifas) setTarifas(data.tarifas);
   }, []);
@@ -73,6 +76,7 @@ export default function TarifasAdmin({ precioBase, precioFinSemana }: { precioBa
       setAjustesMsg({ ok: false, text: data.error || 'No se pudo guardar' });
       return;
     }
+    setDescuentoGuardado(data.descuentoPct);
     setAjustesMsg({ ok: true, text: 'Descuento guardado para ambas cabañas' });
   }
 
@@ -166,6 +170,8 @@ export default function TarifasAdmin({ precioBase, precioFinSemana }: { precioBa
           {ajustesMsg && <div className={`text-sm ${ajustesMsg.ok ? 'text-[#163428]' : 'text-red-600'}`}>{ajustesMsg.text}</div>}
         </div>
       </form>
+
+      <HuespedesAdmin precioBase={precioBase} descuentoPct={descuentoGuardado} />
 
       <div className={`${CARD} mb-10`}>
         <div>

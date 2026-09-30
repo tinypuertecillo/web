@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { createFlowPayment } from "@/lib/flow";
-import { calcularPrecio, esFechaValida } from "@/lib/pricing";
+import { calcularPrecio, esFechaValida, getCapacidades } from "@/lib/pricing";
+import { HUESPEDES_POR_DEFECTO, validarHuespedes } from "@/lib/pricingCore";
 
 export const dynamic = "force-dynamic";
 
@@ -13,8 +14,9 @@ const CABIN_LABEL: Record<string, string> = {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { cabanaId, fechaInicio, fechaFin, nombre, email, telefono } = body as {
+    const { cabanaId, fechaInicio, fechaFin, nombre, email, telefono, huespedes } = body as {
       cabanaId: string;
+      huespedes?: unknown;
       fechaInicio: string;
       fechaFin: string;
       nombre: string;
@@ -30,8 +32,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Rango de fechas inválido" }, { status: 400 });
     }
 
-    // Precio calculado en el servidor (base, fin de semana, tarifas por fecha y descuento)
-    const { noches, total: precioTotal } = await calcularPrecio(fechaInicio, fechaFin);
+    if (cabanaId !== "naciente" && cabanaId !== "poniente") {
+      return NextResponse.json({ error: "Cabaña inválida" }, { status: 400 });
+    }
+
+    // Huéspedes y mascotas: se validan contra la capacidad de la cabaña configurada en el Admin
+    const guests = huespedes ?? HUESPEDES_POR_DEFECTO;
+    const capacidades = await getCapacidades();
+    if (!validarHuespedes(guests, capacidades[cabanaId])) {
+      return NextResponse.json({ error: "La cantidad de huéspedes o mascotas supera la capacidad de la cabaña" }, { status: 400 });
+    }
+
+    // Precio calculado en el servidor (noches con tarifas variables, adicionales por persona y descuento)
+    const { noches, total: precioTotal } = await calcularPrecio(fechaInicio, fechaFin, guests);
 
     // Verificar que las fechas no se traslapen con un bloqueo existente
     const { data: choques } = await supabaseAdmin
@@ -45,21 +58,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Esas fechas ya no están disponibles" }, { status: 409 });
     }
 
-    const { data: reserva, error: insertError } = await supabaseAdmin
-      .from("reservas")
-      .insert({
-        cabana_id: cabanaId,
-        fecha_inicio: fechaInicio,
-        fecha_fin: fechaFin,
-        noches,
-        precio_total: precioTotal,
-        huesped_nombre: nombre,
-        huesped_email: email,
-        huesped_telefono: telefono || null,
-        estado: "pendiente",
-      })
-      .select()
-      .single();
+    const filaReserva = {
+      cabana_id: cabanaId,
+      fecha_inicio: fechaInicio,
+      fecha_fin: fechaFin,
+      noches,
+      precio_total: precioTotal,
+      huesped_nombre: nombre,
+      huesped_email: email,
+      huesped_telefono: telefono || null,
+      estado: "pendiente",
+    };
+    const conHuespedes = { ...filaReserva, adultos: guests.adultos, ninos: guests.ninos, bebes: guests.bebes, mascotas: guests.mascotas };
+
+    let { data: reserva, error: insertError } = await supabaseAdmin.from("reservas").insert(conHuespedes).select().single();
+    // Si las columnas de huéspedes todavía no existen en la tabla, se reserva igual sin ellas
+    if (insertError?.code === "PGRST204") {
+      ({ data: reserva, error: insertError } = await supabaseAdmin.from("reservas").insert(filaReserva).select().single());
+    }
 
     if (insertError || !reserva) {
       return NextResponse.json({ error: insertError?.message || "No se pudo crear la reserva" }, { status: 500 });
@@ -70,7 +86,7 @@ export async function POST(req: NextRequest) {
     try {
       const flowRes = await createFlowPayment({
         commerceOrder: reserva.id,
-        subject: `Reserva ${CABIN_LABEL[cabanaId] || cabanaId} (${noches} noches)`,
+        subject: `Reserva ${CABIN_LABEL[cabanaId] || cabanaId} (${noches} noches, ${guests.adultos + guests.ninos} huésped${guests.adultos + guests.ninos === 1 ? "" : "es"})`,
         amount: precioTotal,
         email,
         urlConfirmation: `${siteUrl}/api/flow/confirm`,
