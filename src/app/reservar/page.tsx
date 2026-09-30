@@ -78,6 +78,7 @@ export default function ReservarPage() {
   const [quote, setQuote] = useState<{ key: string; data: Cotizacion } | null>(null);
   const [guests, setGuests] = useState<Huespedes>({ adultos: 1, ninos: 0, bebes: 0, mascotas: 0 });
   const [capacidad, setCapacidad] = useState<Record<Cabin, Capacidad>>(CAPACIDAD_INICIAL);
+  const [minNoches, setMinNoches] = useState(1);
 
   useEffect(() => {
     let cancelled = false;
@@ -85,6 +86,7 @@ export default function ReservarPage() {
       .then((res) => res.json())
       .then((data) => {
         if (!cancelled && data.capacidad) setCapacidad(data.capacidad);
+        if (!cancelled && Number.isInteger(data.minNoches) && data.minNoches >= 1) setMinNoches(data.minNoches);
       })
       .catch(() => {
         // si falla, se usa la capacidad por defecto
@@ -144,6 +146,9 @@ export default function ReservarPage() {
       if (hasBlockedBetween(checkIn, cell)) {
         setCheckIn(cell);
         setCheckOut(null);
+      } else if (dayIndex(cell) - dayIndex(checkIn) < minNoches) {
+        // menos noches que la estadía mínima: se mantiene la llegada y se espera otra salida
+        return;
       } else {
         setCheckOut(cell);
       }
@@ -205,7 +210,7 @@ export default function ReservarPage() {
       ? `${checkIn.d} ${monthShort(checkIn.m)} – elige salida`
       : 'Selecciona tus fechas';
 
-  const canSubmit = !!(checkIn && checkOut && cotizacion && guestName && guestEmail && !submitting);
+  const canSubmit = !!(checkIn && checkOut && nights >= minNoches && cotizacion && guestName && guestEmail && !submitting);
 
   async function handlePagar() {
     if (!checkIn || !checkOut || !guestName || !guestEmail) return;
@@ -400,6 +405,7 @@ export default function ReservarPage() {
               <div className="text-sm text-[#3a3a3a] pt-1">
                 {checkIn && checkOut ? `${nights} noches en ${CABIN_LABEL[cabin]}` : checkIn ? 'Elige tu fecha de salida' : 'Elige tu fecha de llegada'}
               </div>
+              {minNoches > 1 && <div className="text-xs text-[#8a8a8a]">Estadía mínima: {minNoches} noches.</div>}
             </div>
           </div>
 

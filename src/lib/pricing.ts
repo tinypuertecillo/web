@@ -2,6 +2,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import {
   calcularPrecioConConfig,
   EXTRAS_POR_DEFECTO,
+  MIN_NOCHES_POR_DEFECTO,
   type Capacidad,
   type ConfigPrecios,
   type ExtrasHuespedes,
@@ -51,7 +52,19 @@ export async function getConfigPrecios(): Promise<ConfigPrecios> {
     precioFinSemana: typeof finSemana === "number" && finSemana > 0 ? finSemana : null,
     tarifas: (tarifas.data ?? []) as Tarifa[],
     extras: leerExtras(ajustes.data),
+    minNoches: leerMinNoches(ajustes.data),
   };
+}
+
+// Estadía mínima en noches (columna min_noches de ajustes_precios).
+export function leerMinNoches(row: Record<string, unknown> | null | undefined): number {
+  const n = Number(row?.min_noches);
+  return Number.isInteger(n) && n >= 1 ? n : MIN_NOCHES_POR_DEFECTO;
+}
+
+export async function getMinNoches(): Promise<number> {
+  const { data } = await supabaseAdmin.from("ajustes_precios").select("*").eq("id", 1).maybeSingle();
+  return leerMinNoches(data);
 }
 
 // Lee los extras por huésped desde la fila de ajustes_precios (columnas extra_<tipo>_tipo / _valor).
