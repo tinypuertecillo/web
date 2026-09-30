@@ -37,6 +37,7 @@ export type ConfigPrecios = {
   precioFinSemana: number | null;
   tarifas: Tarifa[];
   extras?: ExtrasHuespedes;
+  minNoches?: number; // estadía mínima en noches
 };
 
 export type NochePrecio = {
@@ -59,6 +60,9 @@ export type ResultadoPrecio = {
   total: number;
   desglose: NochePrecio[];
 };
+
+// Estadía mínima por defecto (sin restricción) si ajustes_precios no tiene la columna min_noches.
+export const MIN_NOCHES_POR_DEFECTO = 1;
 
 export const DAY_MS = 24 * 60 * 60 * 1000;
 

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { createFlowPayment } from "@/lib/flow";
-import { calcularPrecio, esFechaValida, getCapacidades } from "@/lib/pricing";
+import { calcularPrecio, esFechaValida, getCapacidades, getMinNoches } from "@/lib/pricing";
 import { HUESPEDES_POR_DEFECTO, validarHuespedes } from "@/lib/pricingCore";
 
 export const dynamic = "force-dynamic";
@@ -41,6 +41,13 @@ export async function POST(req: NextRequest) {
     const capacidades = await getCapacidades();
     if (!validarHuespedes(guests, capacidades[cabanaId])) {
       return NextResponse.json({ error: "La cantidad de huéspedes o mascotas supera la capacidad de la cabaña" }, { status: 400 });
+    }
+
+    // Estadía mínima configurada en el Admin
+    const minNoches = await getMinNoches();
+    const nochesPedidas = Math.round((Date.parse(fechaFin) - Date.parse(fechaInicio)) / 86400000);
+    if (nochesPedidas < minNoches) {
+      return NextResponse.json({ error: `La estadía mínima es de ${minNoches} ${minNoches === 1 ? "noche" : "noches"}` }, { status: 400 });
     }
 
     // Precio calculado en el servidor (noches con tarifas variables, adicionales por persona y descuento)
