@@ -39,6 +39,19 @@ export default function AdminPage() {
   const [notas, setNotas] = useState('');
   const [formError, setFormError] = useState('');
 
+  const [precioNoche, setPrecioNoche] = useState<number | null>(null);
+  const [precioInput, setPrecioInput] = useState('');
+  const [precioMsg, setPrecioMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [guardandoPrecio, setGuardandoPrecio] = useState(false);
+
+  const loadPrecio = useCallback(async () => {
+    const res = await fetch('/api/admin/precios/base');
+    if (!res.ok) return;
+    const data = await res.json();
+    setPrecioNoche(data.precioNoche);
+    setPrecioInput(String(data.precioNoche));
+  }, []);
+
   const loadBloqueos = useCallback(async () => {
     setLoading(true);
     const res = await fetch('/api/admin/bloqueos');
@@ -51,7 +64,8 @@ export default function AdminPage() {
     setBloqueos(data.bloqueos || []);
     setAuthed(true);
     setLoading(false);
-  }, []);
+    loadPrecio();
+  }, [loadPrecio]);
 
   useEffect(() => {
     loadBloqueos();
@@ -113,6 +127,30 @@ export default function AdminPage() {
     loadBloqueos();
   }
 
+  async function handleGuardarPrecio(e: React.FormEvent) {
+    e.preventDefault();
+    setPrecioMsg(null);
+    const valor = Number(precioInput);
+    if (!Number.isInteger(valor) || valor <= 0) {
+      setPrecioMsg({ ok: false, text: 'Ingresa un precio válido (número entero, sin puntos)' });
+      return;
+    }
+    setGuardandoPrecio(true);
+    const res = await fetch('/api/admin/precios/base', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ precioNoche: valor }),
+    });
+    setGuardandoPrecio(false);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setPrecioMsg({ ok: false, text: data.error || 'No se pudo guardar el precio' });
+      return;
+    }
+    setPrecioNoche(valor);
+    setPrecioMsg({ ok: true, text: 'Precio actualizado para ambas cabañas' });
+  }
+
   async function handleDelete(id: string) {
     if (!confirm('¿Desbloquear estas fechas?')) return;
     await fetch(`/api/admin/bloqueos?id=${id}`, { method: 'DELETE' });
@@ -168,6 +206,35 @@ export default function AdminPage() {
             Cerrar sesión
           </button>
         </div>
+
+        <form onSubmit={handleGuardarPrecio} className="w-full bg-white rounded-2xl p-7 shadow-[0_20px_40px_rgba(29,27,22,0.05)] flex flex-col gap-4 mb-10">
+          <div>
+            <h2 className="font-serif text-xl text-[#001f14]">Precio base por noche</h2>
+            <div className="text-[11px] text-[#8a8a8a] mt-1">Aplica a Tiny House Naciente y Poniente.</div>
+          </div>
+          <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+            <div className="flex flex-col gap-1 flex-1">
+              <label className="text-[11px] uppercase tracking-wide text-secondary font-bold">Precio por noche (CLP)</label>
+              <input
+                type="number"
+                min={1}
+                step={1}
+                inputMode="numeric"
+                value={precioInput}
+                onChange={(e) => setPrecioInput(e.target.value)}
+                placeholder="Ej: 65000"
+                className="border-0 border-b-2 border-[#dcd0bf] py-2 px-0.5 text-sm bg-transparent outline-none focus:border-[#001f14]"
+              />
+            </div>
+            <button type="submit" disabled={guardandoPrecio} className="rounded-lg py-3.5 px-6 text-[15px] font-semibold bg-[#163428] text-white hover:opacity-90 transition-opacity disabled:opacity-50">
+              {guardandoPrecio ? 'Guardando…' : 'Guardar precio'}
+            </button>
+          </div>
+          {precioNoche !== null && (
+            <div className="text-sm text-[#3a3a3a]">Precio actual: <span className="font-semibold">${precioNoche.toLocaleString('es-CL')}</span> por noche</div>
+          )}
+          {precioMsg && <div className={`text-sm ${precioMsg.ok ? 'text-[#163428]' : 'text-red-600'}`}>{precioMsg.text}</div>}
+        </form>
 
         <div className="flex flex-col lg:flex-row gap-10 items-start">
           <form onSubmit={handleAddBloqueo} className="flex-1 w-full bg-white rounded-2xl p-7 shadow-[0_20px_40px_rgba(29,27,22,0.05)] flex flex-col gap-4">
