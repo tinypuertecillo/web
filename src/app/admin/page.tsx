@@ -3,6 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
+import TarifasAdmin from './TarifasAdmin';
 
 type Cabin = 'naciente' | 'poniente';
 
@@ -235,6 +236,8 @@ export default function AdminPage() {
           )}
           {precioMsg && <div className={`text-sm ${precioMsg.ok ? 'text-[#163428]' : 'text-red-600'}`}>{precioMsg.text}</div>}
         </form>
+
+        <TarifasAdmin precioBase={precioNoche} />
 
         <div className="flex flex-col lg:flex-row gap-10 items-start">
           <form onSubmit={handleAddBloqueo} className="flex-1 w-full bg-white rounded-2xl p-7 shadow-[0_20px_40px_rgba(29,27,22,0.05)] flex flex-col gap-4">

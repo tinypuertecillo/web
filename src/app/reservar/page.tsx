@@ -8,6 +8,8 @@ type Cabin = 'naciente' | 'poniente';
 
 type DateCell = { m: number; d: number };
 
+type Cotizacion = { noches: number; subtotal: number; descuentoPct: number; descuento: number; total: number };
+
 type BloqueoApi = { cabana_id: Cabin; fecha_inicio: string; fecha_fin: string };
 
 const CABIN_LABEL: Record<Cabin, string> = {
@@ -50,18 +52,10 @@ export default function ReservarPage() {
   const [loadingAvailability, setLoadingAvailability] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
-  const [precioNoche, setPrecioNoche] = useState(65000);
+  const [quote, setQuote] = useState<{ key: string; data: Cotizacion } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    fetch('/api/precios')
-      .then((res) => res.json())
-      .then((data) => {
-        if (!cancelled && typeof data.precioNoche === 'number') setPrecioNoche(data.precioNoche);
-      })
-      .catch(() => {
-        // si falla, se mantiene el precio por defecto
-      });
     (async () => {
       try {
         const res = await fetch('/api/disponibilidad');
@@ -131,7 +125,32 @@ export default function ReservarPage() {
     return dayIndex(checkOut) - dayIndex(checkIn);
   }, [checkIn, checkOut]);
 
-  const total = nights * precioNoche;
+  const fechaInicioISO = checkIn ? `2026-${String(checkIn.m).padStart(2, '0')}-${String(checkIn.d).padStart(2, '0')}` : '';
+  const fechaFinISO = checkOut ? `2026-${String(checkOut.m).padStart(2, '0')}-${String(checkOut.d).padStart(2, '0')}` : '';
+  const quoteKey = checkIn && checkOut ? `${fechaInicioISO}|${fechaFinISO}` : '';
+
+  // El precio se calcula en el servidor (base, fin de semana, tarifas por fecha y descuento)
+  useEffect(() => {
+    if (!quoteKey) return;
+    let cancelled = false;
+    const [fechaInicio, fechaFin] = quoteKey.split('|');
+    fetch('/api/precios/calcular', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ fechaInicio, fechaFin }),
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data) setQuote({ key: quoteKey, data });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [quoteKey]);
+
+  const cotizacion = quote && quote.key === quoteKey ? quote.data : null;
+  const total = cotizacion?.total ?? 0;
 
   const rangeHeadline = checkIn && checkOut
     ? `${checkIn.d} ${monthShort(checkIn.m)} – ${checkOut.d} ${monthShort(checkOut.m)}`
@@ -139,15 +158,15 @@ export default function ReservarPage() {
       ? `${checkIn.d} ${monthShort(checkIn.m)} – elige salida`
       : 'Selecciona tus fechas';
 
-  const canSubmit = !!(checkIn && checkOut && guestName && guestEmail && !submitting);
+  const canSubmit = !!(checkIn && checkOut && cotizacion && guestName && guestEmail && !submitting);
 
   async function handlePagar() {
     if (!checkIn || !checkOut || !guestName || !guestEmail) return;
     setSubmitting(true);
     setSubmitError('');
     try {
-      const fechaInicio = `2026-${String(checkIn.m).padStart(2, '0')}-${String(checkIn.d).padStart(2, '0')}`;
-      const fechaFin = `2026-${String(checkOut.m).padStart(2, '0')}-${String(checkOut.d).padStart(2, '0')}`;
+      const fechaInicio = fechaInicioISO;
+      const fechaFin = fechaFinISO;
       const res = await fetch('/api/flow/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -334,6 +353,13 @@ export default function ReservarPage() {
             </div>
 
             <div className="h-px bg-[#eee7da]" />
+
+            {cotizacion && cotizacion.descuento > 0 && (
+              <div className="flex flex-col gap-2 pt-2">
+                <div className="flex justify-between text-sm"><span className="text-[#3a3a3a]">Subtotal</span><span className="font-semibold">{fmtCLP(cotizacion.subtotal)}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-[#3a3a3a]">Descuento {cotizacion.descuentoPct}%</span><span className="font-semibold text-[#2b4c3f]">−{fmtCLP(cotizacion.descuento)}</span></div>
+              </div>
+            )}
 
             <div className="flex justify-between pt-2">
               <span className="font-serif text-base">Total a pagar</span>
