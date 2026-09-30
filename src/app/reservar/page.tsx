@@ -9,7 +9,7 @@ type Cabin = 'naciente' | 'poniente';
 type DateCell = { m: number; d: number };
 
 type Huespedes = { adultos: number; ninos: number; bebes: number; mascotas: number };
-type Capacidad = { maxHuespedes: number; maxMascotas: number };
+type Capacidad = { maxHuespedes: number; maxAdultos: number; maxNinos: number; maxBebes: number; maxMascotas: number };
 type Cotizacion = {
   noches: number;
   subtotalNoches: number;
@@ -29,8 +29,8 @@ const EXTRA_LABEL: Record<string, string> = {
 };
 
 const CAPACIDAD_INICIAL: Record<Cabin, Capacidad> = {
-  naciente: { maxHuespedes: 4, maxMascotas: 1 },
-  poniente: { maxHuespedes: 4, maxMascotas: 1 },
+  naciente: { maxHuespedes: 4, maxAdultos: 4, maxNinos: 3, maxBebes: 10, maxMascotas: 1 },
+  poniente: { maxHuespedes: 4, maxAdultos: 4, maxNinos: 3, maxBebes: 10, maxMascotas: 1 },
 };
 
 type BloqueoApi = { cabana_id: Cabin; fecha_inicio: string; fecha_fin: string };
@@ -166,7 +166,7 @@ export default function ReservarPage() {
   const cambiarHuespedes = (campo: keyof Huespedes, delta: number) => {
     setGuests((g) => {
       const next = { ...g, [campo]: Math.max(campo === 'adultos' ? 1 : 0, g[campo] + delta) };
-      if (next.adultos + next.ninos > cap.maxHuespedes || next.mascotas > cap.maxMascotas || next.bebes > 10) return g;
+      if (next.adultos + next.ninos > cap.maxHuespedes || next.adultos > cap.maxAdultos || next.ninos > cap.maxNinos || next.bebes > cap.maxBebes || next.mascotas > cap.maxMascotas) return g;
       return next;
     });
   };
@@ -336,8 +336,13 @@ export default function ReservarPage() {
                     setCheckOut(null);
                     const cp = capacidad[c];
                     setGuests((g) => {
-                      const personas = Math.min(g.adultos, cp.maxHuespedes);
-                      return { adultos: personas, ninos: Math.min(g.ninos, cp.maxHuespedes - personas), bebes: g.bebes, mascotas: Math.min(g.mascotas, cp.maxMascotas) };
+                      const adultos = Math.min(g.adultos, cp.maxAdultos, cp.maxHuespedes);
+                      return {
+                        adultos,
+                        ninos: Math.min(g.ninos, cp.maxNinos, cp.maxHuespedes - adultos),
+                        bebes: Math.min(g.bebes, cp.maxBebes),
+                        mascotas: Math.min(g.mascotas, cp.maxMascotas),
+                      };
                     });
                   }}
                   className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
@@ -414,9 +419,9 @@ export default function ReservarPage() {
             <div className="flex flex-col gap-3 py-1">
               <div className="text-[11px] uppercase tracking-wide text-secondary font-bold">Huéspedes</div>
               {([
-                { campo: 'adultos', titulo: 'Adultos', detalle: 'Edad: 13 o más', min: 1, max: cap.maxHuespedes - guests.ninos },
-                { campo: 'ninos', titulo: 'Niños', detalle: 'De 2 a 12 años', min: 0, max: cap.maxHuespedes - guests.adultos },
-                { campo: 'bebes', titulo: 'Bebés', detalle: 'Menos de 2 años', min: 0, max: 10 },
+                { campo: 'adultos', titulo: 'Adultos', detalle: 'Edad: 13 o más', min: 1, max: Math.min(cap.maxAdultos, cap.maxHuespedes - guests.ninos) },
+                { campo: 'ninos', titulo: 'Niños', detalle: 'De 2 a 12 años', min: 0, max: Math.min(cap.maxNinos, cap.maxHuespedes - guests.adultos) },
+                { campo: 'bebes', titulo: 'Bebés', detalle: 'Menos de 2 años', min: 0, max: cap.maxBebes },
                 { campo: 'mascotas', titulo: 'Mascotas', detalle: `Máximo ${cap.maxMascotas}`, min: 0, max: cap.maxMascotas },
               ] as { campo: keyof Huespedes; titulo: string; detalle: string; min: number; max: number }[]).map((row) => (
                 <div key={row.campo} className="flex items-center justify-between">
@@ -431,7 +436,7 @@ export default function ReservarPage() {
                   </div>
                 </div>
               ))}
-              <div className="text-[11px] text-[#8a8a8a]">Máximo {cap.maxHuespedes} huéspedes (adultos y niños); los bebés no cuentan.</div>
+              <div className="text-[11px] text-[#8a8a8a]">Máximo {cap.maxHuespedes} huéspedes (adultos y niños; hasta {cap.maxAdultos} adultos y {cap.maxNinos} {cap.maxNinos === 1 ? 'niño' : 'niños'}); bebés hasta {cap.maxBebes}, no cuentan en el total.</div>
             </div>
 
             <div className="h-px bg-[#eee7da]" />

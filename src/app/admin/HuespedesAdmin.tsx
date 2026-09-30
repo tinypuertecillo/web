@@ -24,7 +24,8 @@ type Cabana = (typeof CABANAS)[number]['id'];
 type Msg = { ok: boolean; text: string } | null;
 
 type ExtrasForm = Record<TipoHuesped, { tipo: 'porcentaje' | 'monto'; valor: string }>;
-type CapForm = Record<Cabana, { maxHuespedes: string; maxMascotas: string }>;
+type CapCampos = { maxHuespedes: string; maxAdultos: string; maxNinos: string; maxBebes: string; maxMascotas: string };
+type CapForm = Record<Cabana, CapCampos>;
 
 const aForm = (e: ExtrasHuespedes): ExtrasForm => {
   const f = {} as ExtrasForm;
@@ -32,14 +33,33 @@ const aForm = (e: ExtrasHuespedes): ExtrasForm => {
   return f;
 };
 
-const capAForm = (c: Record<Cabana, Capacidad>): CapForm => ({
-  naciente: { maxHuespedes: String(c.naciente.maxHuespedes), maxMascotas: String(c.naciente.maxMascotas) },
-  poniente: { maxHuespedes: String(c.poniente.maxHuespedes), maxMascotas: String(c.poniente.maxMascotas) },
+const capCampos = (c: Capacidad): CapCampos => ({
+  maxHuespedes: String(c.maxHuespedes),
+  maxAdultos: String(c.maxAdultos),
+  maxNinos: String(c.maxNinos),
+  maxBebes: String(c.maxBebes),
+  maxMascotas: String(c.maxMascotas),
 });
+
+const capAForm = (c: Record<Cabana, Capacidad>): CapForm => ({
+  naciente: capCampos(c.naciente),
+  poniente: capCampos(c.poniente),
+});
+
+const CAP_CAMPOS: { campo: keyof CapCampos; label: string; min: number }[] = [
+  { campo: 'maxHuespedes', label: 'Total adultos + niños', min: 1 },
+  { campo: 'maxAdultos', label: 'Máx. adultos', min: 1 },
+  { campo: 'maxNinos', label: 'Máx. niños', min: 0 },
+  { campo: 'maxBebes', label: 'Máx. bebés', min: 0 },
+  { campo: 'maxMascotas', label: 'Máx. mascotas', min: 0 },
+];
 
 export default function HuespedesAdmin({ precioBase, descuentoPct }: { precioBase: number | null; descuentoPct: number }) {
   const [extras, setExtras] = useState<ExtrasForm>(aForm(EXTRAS_POR_DEFECTO));
-  const [cap, setCap] = useState<CapForm>({ naciente: { maxHuespedes: '4', maxMascotas: '1' }, poniente: { maxHuespedes: '4', maxMascotas: '1' } });
+  const [cap, setCap] = useState<CapForm>({
+    naciente: { maxHuespedes: '4', maxAdultos: '4', maxNinos: '3', maxBebes: '10', maxMascotas: '1' },
+    poniente: { maxHuespedes: '4', maxAdultos: '4', maxNinos: '3', maxBebes: '10', maxMascotas: '1' },
+  });
   const [msg, setMsg] = useState<Msg>(null);
   const [guardando, setGuardando] = useState(false);
 
@@ -92,7 +112,7 @@ export default function HuespedesAdmin({ precioBase, descuentoPct }: { precioBas
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         capacidad: Object.fromEntries(
-          CABANAS.map(({ id }) => [id, { maxHuespedes: Number(cap[id].maxHuespedes), maxMascotas: Number(cap[id].maxMascotas || 0) }])
+          CABANAS.map(({ id }) => [id, Object.fromEntries(CAP_CAMPOS.map(({ campo }) => [campo, Number(cap[id][campo] || 0)]))])
         ),
       }),
     });
@@ -147,20 +167,18 @@ export default function HuespedesAdmin({ precioBase, descuentoPct }: { precioBas
 
       <div className="h-px bg-[#eee7da]" />
       <div className="text-sm font-semibold text-[#001f14]">Capacidad máxima por cabaña</div>
-      <div className="text-[11px] text-[#8a8a8a] -mt-2">Los huéspedes cuentan adultos y niños; los bebés no cuentan.</div>
+      <div className="text-[11px] text-[#8a8a8a] -mt-2">El total de adultos + niños no puede superar el primer valor (los bebés no cuentan en el total); además cada tipo tiene su propio máximo. Ej.: total 4, adultos 3, niños 1, bebés 1.</div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {CABANAS.map(({ id, label }) => (
           <div key={id} className="flex flex-col gap-3">
             <span className="text-sm font-semibold text-[#001f14]">Tiny House {label}</span>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1">
-                <label className={LABEL}>Huéspedes</label>
-                <input type="number" min={1} step={1} inputMode="numeric" value={cap[id].maxHuespedes} onChange={(e) => setCap({ ...cap, [id]: { ...cap[id], maxHuespedes: e.target.value } })} className={INPUT} />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className={LABEL}>Mascotas</label>
-                <input type="number" min={0} step={1} inputMode="numeric" value={cap[id].maxMascotas} onChange={(e) => setCap({ ...cap, [id]: { ...cap[id], maxMascotas: e.target.value } })} className={INPUT} />
-              </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {CAP_CAMPOS.map(({ campo, label, min }) => (
+                <div key={campo} className="flex flex-col gap-1">
+                  <label className={LABEL}>{label}</label>
+                  <input type="number" min={min} step={1} inputMode="numeric" value={cap[id][campo]} onChange={(e) => setCap({ ...cap, [id]: { ...cap[id], [campo]: e.target.value } })} className={INPUT} />
+                </div>
+              ))}
             </div>
           </div>
         ))}
