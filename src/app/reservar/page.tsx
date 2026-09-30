@@ -8,7 +8,30 @@ type Cabin = 'naciente' | 'poniente';
 
 type DateCell = { m: number; d: number };
 
-type Cotizacion = { noches: number; subtotal: number; descuentoPct: number; descuento: number; total: number };
+type Huespedes = { adultos: number; ninos: number; bebes: number; mascotas: number };
+type Capacidad = { maxHuespedes: number; maxMascotas: number };
+type Cotizacion = {
+  noches: number;
+  subtotalNoches: number;
+  extrasTotal: number;
+  extrasDetalle: { tipo: 'adulto' | 'nino' | 'bebe' | 'mascota'; cantidad: number; monto: number }[];
+  subtotal: number;
+  descuentoPct: number;
+  descuento: number;
+  total: number;
+};
+
+const EXTRA_LABEL: Record<string, string> = {
+  adulto: 'Adulto adicional',
+  nino: 'Niños',
+  bebe: 'Bebés',
+  mascota: 'Mascotas',
+};
+
+const CAPACIDAD_INICIAL: Record<Cabin, Capacidad> = {
+  naciente: { maxHuespedes: 4, maxMascotas: 1 },
+  poniente: { maxHuespedes: 4, maxMascotas: 1 },
+};
 
 type BloqueoApi = { cabana_id: Cabin; fecha_inicio: string; fecha_fin: string };
 
@@ -53,9 +76,19 @@ export default function ReservarPage() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [quote, setQuote] = useState<{ key: string; data: Cotizacion } | null>(null);
+  const [guests, setGuests] = useState<Huespedes>({ adultos: 1, ninos: 0, bebes: 0, mascotas: 0 });
+  const [capacidad, setCapacidad] = useState<Record<Cabin, Capacidad>>(CAPACIDAD_INICIAL);
 
   useEffect(() => {
     let cancelled = false;
+    fetch('/api/precios')
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled && data.capacidad) setCapacidad(data.capacidad);
+      })
+      .catch(() => {
+        // si falla, se usa la capacidad por defecto
+      });
     (async () => {
       try {
         const res = await fetch('/api/disponibilidad');
@@ -127,17 +160,31 @@ export default function ReservarPage() {
 
   const fechaInicioISO = checkIn ? `2026-${String(checkIn.m).padStart(2, '0')}-${String(checkIn.d).padStart(2, '0')}` : '';
   const fechaFinISO = checkOut ? `2026-${String(checkOut.m).padStart(2, '0')}-${String(checkOut.d).padStart(2, '0')}` : '';
-  const quoteKey = checkIn && checkOut ? `${fechaInicioISO}|${fechaFinISO}` : '';
+  const cap = capacidad[cabin];
+  const quoteKey = checkIn && checkOut ? `${fechaInicioISO}|${fechaFinISO}|${cabin}|${guests.adultos}|${guests.ninos}|${guests.bebes}|${guests.mascotas}` : '';
+
+  const cambiarHuespedes = (campo: keyof Huespedes, delta: number) => {
+    setGuests((g) => {
+      const next = { ...g, [campo]: Math.max(campo === 'adultos' ? 1 : 0, g[campo] + delta) };
+      if (next.adultos + next.ninos > cap.maxHuespedes || next.mascotas > cap.maxMascotas || next.bebes > 10) return g;
+      return next;
+    });
+  };
 
   // El precio se calcula en el servidor (base, fin de semana, tarifas por fecha y descuento)
   useEffect(() => {
     if (!quoteKey) return;
     let cancelled = false;
-    const [fechaInicio, fechaFin] = quoteKey.split('|');
+    const [fechaInicio, fechaFin, cabanaId, adultos, ninos, bebes, mascotas] = quoteKey.split('|');
     fetch('/api/precios/calcular', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ fechaInicio, fechaFin }),
+      body: JSON.stringify({
+        fechaInicio,
+        fechaFin,
+        cabanaId,
+        huespedes: { adultos: Number(adultos), ninos: Number(ninos), bebes: Number(bebes), mascotas: Number(mascotas) },
+      }),
     })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
@@ -174,6 +221,7 @@ export default function ReservarPage() {
           cabanaId: cabin,
           fechaInicio,
           fechaFin,
+          huespedes: guests,
           nombre: guestName,
           email: guestEmail,
           telefono: guestPhone || undefined,
@@ -282,7 +330,16 @@ export default function ReservarPage() {
               {(['naciente', 'poniente'] as Cabin[]).map((c) => (
                 <button
                   key={c}
-                  onClick={() => { setCabin(c); setCheckIn(null); setCheckOut(null); }}
+                  onClick={() => {
+                    setCabin(c);
+                    setCheckIn(null);
+                    setCheckOut(null);
+                    const cp = capacidad[c];
+                    setGuests((g) => {
+                      const personas = Math.min(g.adultos, cp.maxHuespedes);
+                      return { adultos: personas, ninos: Math.min(g.ninos, cp.maxHuespedes - personas), bebes: g.bebes, mascotas: Math.min(g.mascotas, cp.maxMascotas) };
+                    });
+                  }}
                   className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
                     cabin === c ? 'bg-[#163428] text-white' : 'bg-[#eee7da] text-[#3a3a3a] hover:bg-[#e5dbcd]'
                   }`}
@@ -354,8 +411,42 @@ export default function ReservarPage() {
 
             <div className="h-px bg-[#eee7da]" />
 
-            {cotizacion && cotizacion.descuento > 0 && (
+            <div className="flex flex-col gap-3 py-1">
+              <div className="text-[11px] uppercase tracking-wide text-secondary font-bold">Huéspedes</div>
+              {([
+                { campo: 'adultos', titulo: 'Adultos', detalle: 'Edad: 13 o más', min: 1, max: cap.maxHuespedes - guests.ninos },
+                { campo: 'ninos', titulo: 'Niños', detalle: 'De 2 a 12 años', min: 0, max: cap.maxHuespedes - guests.adultos },
+                { campo: 'bebes', titulo: 'Bebés', detalle: 'Menos de 2 años', min: 0, max: 10 },
+                { campo: 'mascotas', titulo: 'Mascotas', detalle: `Máximo ${cap.maxMascotas}`, min: 0, max: cap.maxMascotas },
+              ] as { campo: keyof Huespedes; titulo: string; detalle: string; min: number; max: number }[]).map((row) => (
+                <div key={row.campo} className="flex items-center justify-between">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-semibold text-[#001f14]">{row.titulo}</span>
+                    <span className="text-xs text-[#8a8a8a]">{row.detalle}</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button type="button" aria-label={`Quitar ${row.titulo}`} disabled={guests[row.campo] <= row.min} onClick={() => cambiarHuespedes(row.campo, -1)} className="w-8 h-8 rounded-full bg-[#eee7da] text-[#001f14] font-bold disabled:opacity-40">−</button>
+                    <span className="w-5 text-center text-sm font-semibold">{guests[row.campo]}</span>
+                    <button type="button" aria-label={`Agregar ${row.titulo}`} disabled={guests[row.campo] >= row.max} onClick={() => cambiarHuespedes(row.campo, 1)} className="w-8 h-8 rounded-full bg-[#eee7da] text-[#001f14] font-bold disabled:opacity-40">+</button>
+                  </div>
+                </div>
+              ))}
+              <div className="text-[11px] text-[#8a8a8a]">Máximo {cap.maxHuespedes} huéspedes (adultos y niños); los bebés no cuentan.</div>
+            </div>
+
+            <div className="h-px bg-[#eee7da]" />
+
+            {cotizacion && (cotizacion.extrasTotal > 0 || cotizacion.descuento > 0) && (
               <div className="flex flex-col gap-2 pt-2">
+                <div className="flex justify-between text-sm"><span className="text-[#3a3a3a]">{cotizacion.noches} {cotizacion.noches === 1 ? 'noche' : 'noches'}</span><span className="font-semibold">{fmtCLP(cotizacion.subtotalNoches)}</span></div>
+                {cotizacion.extrasDetalle.filter((e) => e.monto > 0).map((e) => (
+                  <div key={e.tipo} className="flex justify-between text-sm"><span className="text-[#3a3a3a]">{EXTRA_LABEL[e.tipo]} × {e.cantidad}</span><span className="font-semibold">{fmtCLP(e.monto)}</span></div>
+                ))}
+              </div>
+            )}
+
+            {cotizacion && cotizacion.descuento > 0 && (
+              <div className="flex flex-col gap-2">
                 <div className="flex justify-between text-sm"><span className="text-[#3a3a3a]">Subtotal</span><span className="font-semibold">{fmtCLP(cotizacion.subtotal)}</span></div>
                 <div className="flex justify-between text-sm"><span className="text-[#3a3a3a]">Descuento {cotizacion.descuentoPct}%</span><span className="font-semibold text-[#2b4c3f]">−{fmtCLP(cotizacion.descuento)}</span></div>
               </div>

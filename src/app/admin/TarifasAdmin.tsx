@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import HuespedesAdmin from './HuespedesAdmin';
 import { precioDeNoche, type ConfigPrecios, type Tarifa } from '@/lib/pricingCore';
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -166,6 +167,8 @@ export default function TarifasAdmin({ precioBase, precioFinSemana }: { precioBa
           {ajustesMsg && <div className={`text-sm ${ajustesMsg.ok ? 'text-[#163428]' : 'text-red-600'}`}>{ajustesMsg.text}</div>}
         </div>
       </form>
+
+      <HuespedesAdmin precioBase={precioBase} descuentoPct={ajustes.descuentoPct} />
 
       <div className={`${CARD} mb-10`}>
         <div>

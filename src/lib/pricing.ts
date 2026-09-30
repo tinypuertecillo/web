@@ -1,9 +1,14 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import {
   calcularPrecioConConfig,
+  EXTRAS_POR_DEFECTO,
+  type Capacidad,
   type ConfigPrecios,
+  type ExtrasHuespedes,
+  type Huespedes,
   type ResultadoPrecio,
   type Tarifa,
+  type TipoHuesped,
 } from "@/lib/pricingCore";
 
 export * from "@/lib/pricingCore";
@@ -33,7 +38,7 @@ export async function getPrecioNoche(): Promise<number> {
 export async function getConfigPrecios(): Promise<ConfigPrecios> {
   const [precioBase, ajustes, tarifas] = await Promise.all([
     getPrecioNoche(),
-    supabaseAdmin.from("ajustes_precios").select("descuento_pct, precio_fin_semana").eq("id", 1).maybeSingle(),
+    supabaseAdmin.from("ajustes_precios").select("*").eq("id", 1).maybeSingle(),
     supabaseAdmin.from("tarifas_fecha").select("*").order("fecha_inicio", { ascending: true }),
   ]);
 
@@ -45,9 +50,42 @@ export async function getConfigPrecios(): Promise<ConfigPrecios> {
     descuentoPct: Number.isFinite(descuento) && descuento > 0 && descuento < 100 ? descuento : 0,
     precioFinSemana: typeof finSemana === "number" && finSemana > 0 ? finSemana : null,
     tarifas: (tarifas.data ?? []) as Tarifa[],
+    extras: leerExtras(ajustes.data),
   };
 }
 
-export async function calcularPrecio(fechaInicio: string, fechaFin: string): Promise<ResultadoPrecio> {
-  return calcularPrecioConConfig(fechaInicio, fechaFin, await getConfigPrecios());
+// Lee los extras por huésped desde la fila de ajustes_precios (columnas extra_<tipo>_tipo / _valor).
+export function leerExtras(row: Record<string, unknown> | null | undefined): ExtrasHuespedes {
+  const extras: ExtrasHuespedes = JSON.parse(JSON.stringify(EXTRAS_POR_DEFECTO));
+  if (!row) return extras;
+  for (const tipo of Object.keys(extras) as TipoHuesped[]) {
+    const valor = Number(row[`extra_${tipo}_valor`]);
+    extras[tipo] = {
+      tipo: row[`extra_${tipo}_tipo`] === "monto" ? "monto" : "porcentaje",
+      valor: Number.isFinite(valor) && valor > 0 ? valor : 0,
+    };
+  }
+  return extras;
+}
+
+export const CAPACIDAD_POR_DEFECTO: Capacidad = { maxHuespedes: 4, maxMascotas: 1 };
+
+// Capacidad por cabaña (columnas max_huespedes / max_mascotas de precios_cabana).
+export async function getCapacidades(): Promise<Record<"naciente" | "poniente", Capacidad>> {
+  const res: Record<"naciente" | "poniente", Capacidad> = {
+    naciente: { ...CAPACIDAD_POR_DEFECTO },
+    poniente: { ...CAPACIDAD_POR_DEFECTO },
+  };
+  const { data } = await supabaseAdmin.from("precios_cabana").select("cabana_id, max_huespedes, max_mascotas");
+  for (const row of data ?? []) {
+    const id = row.cabana_id as string;
+    if (id !== "naciente" && id !== "poniente") continue;
+    if (Number.isInteger(row.max_huespedes) && row.max_huespedes > 0) res[id].maxHuespedes = row.max_huespedes;
+    if (Number.isInteger(row.max_mascotas) && row.max_mascotas >= 0) res[id].maxMascotas = row.max_mascotas;
+  }
+  return res;
+}
+
+export async function calcularPrecio(fechaInicio: string, fechaFin: string, huespedes?: Huespedes): Promise<ResultadoPrecio> {
+  return calcularPrecioConConfig(fechaInicio, fechaFin, await getConfigPrecios(), huespedes);
 }
