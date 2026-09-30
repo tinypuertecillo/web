@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { createFlowPayment } from "@/lib/flow";
-import { getPrecioNoche } from "@/lib/pricing";
+import { calcularPrecio, esFechaValida } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
 
@@ -26,12 +26,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Faltan datos de la reserva" }, { status: 400 });
     }
 
-    const noches = Math.round(
-      (new Date(fechaFin).getTime() - new Date(fechaInicio).getTime()) / (1000 * 60 * 60 * 24)
-    );
-    if (noches <= 0) {
+    if (!esFechaValida(fechaInicio) || !esFechaValida(fechaFin) || fechaFin <= fechaInicio) {
       return NextResponse.json({ error: "Rango de fechas inválido" }, { status: 400 });
     }
+
+    // Precio calculado en el servidor (base, fin de semana, tarifas por fecha y descuento)
+    const { noches, total: precioTotal } = await calcularPrecio(fechaInicio, fechaFin);
 
     // Verificar que las fechas no se traslapen con un bloqueo existente
     const { data: choques } = await supabaseAdmin
@@ -44,8 +44,6 @@ export async function POST(req: NextRequest) {
     if (choques && choques.length > 0) {
       return NextResponse.json({ error: "Esas fechas ya no están disponibles" }, { status: 409 });
     }
-
-    const precioTotal = noches * (await getPrecioNoche());
 
     const { data: reserva, error: insertError } = await supabaseAdmin
       .from("reservas")
