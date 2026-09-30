@@ -68,19 +68,22 @@ export function leerExtras(row: Record<string, unknown> | null | undefined): Ext
   return extras;
 }
 
-export const CAPACIDAD_POR_DEFECTO: Capacidad = { maxHuespedes: 4, maxMascotas: 1 };
+export const CAPACIDAD_POR_DEFECTO: Capacidad = { maxHuespedes: 4, maxAdultos: 4, maxNinos: 3, maxBebes: 10, maxMascotas: 1 };
 
-// Capacidad por cabaña (columnas max_huespedes / max_mascotas de precios_cabana).
+// Capacidad por cabaña (columnas max_huespedes, max_adultos, max_ninos, max_bebes y max_mascotas de precios_cabana).
 export async function getCapacidades(): Promise<Record<"naciente" | "poniente", Capacidad>> {
   const res: Record<"naciente" | "poniente", Capacidad> = {
     naciente: { ...CAPACIDAD_POR_DEFECTO },
     poniente: { ...CAPACIDAD_POR_DEFECTO },
   };
-  const { data } = await supabaseAdmin.from("precios_cabana").select("cabana_id, max_huespedes, max_mascotas");
+  const { data } = await supabaseAdmin.from("precios_cabana").select("*");
   for (const row of data ?? []) {
     const id = row.cabana_id as string;
     if (id !== "naciente" && id !== "poniente") continue;
     if (Number.isInteger(row.max_huespedes) && row.max_huespedes > 0) res[id].maxHuespedes = row.max_huespedes;
+    if (Number.isInteger(row.max_adultos) && row.max_adultos > 0) res[id].maxAdultos = row.max_adultos;
+    if (Number.isInteger(row.max_ninos) && row.max_ninos >= 0) res[id].maxNinos = row.max_ninos;
+    if (Number.isInteger(row.max_bebes) && row.max_bebes >= 0) res[id].maxBebes = row.max_bebes;
     if (Number.isInteger(row.max_mascotas) && row.max_mascotas >= 0) res[id].maxMascotas = row.max_mascotas;
   }
   return res;

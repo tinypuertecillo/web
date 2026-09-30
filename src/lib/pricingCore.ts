@@ -28,7 +28,8 @@ export const EXTRAS_POR_DEFECTO: ExtrasHuespedes = {
   mascota: { tipo: "porcentaje", valor: 0 },
 };
 
-export type Capacidad = { maxHuespedes: number; maxMascotas: number };
+// maxHuespedes = tope de adultos + niños juntos (los bebés no cuentan); además cada tipo tiene su propio tope.
+export type Capacidad = { maxHuespedes: number; maxAdultos: number; maxNinos: number; maxBebes: number; maxMascotas: number };
 
 export type ConfigPrecios = {
   precioBase: number;
@@ -102,7 +103,12 @@ export function validarHuespedes(h: unknown, cap?: Capacidad): h is Huespedes {
   const { adultos, ninos, bebes, mascotas } = h as Record<string, unknown>;
   const ok = (n: unknown, min: number): n is number => Number.isInteger(n) && (n as number) >= min && (n as number) <= 50;
   if (!ok(adultos, 1) || !ok(ninos, 0) || !ok(bebes, 0) || !ok(mascotas, 0)) return false;
-  if (cap && (adultos + ninos > cap.maxHuespedes || mascotas > cap.maxMascotas)) return false;
+  if (
+    cap &&
+    (adultos + ninos > cap.maxHuespedes || adultos > cap.maxAdultos || ninos > cap.maxNinos || bebes > cap.maxBebes || mascotas > cap.maxMascotas)
+  ) {
+    return false;
+  }
   return true;
 }
 
