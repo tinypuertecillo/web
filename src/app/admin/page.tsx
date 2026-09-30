@@ -44,13 +44,21 @@ export default function AdminPage() {
   const [precioInput, setPrecioInput] = useState('');
   const [precioMsg, setPrecioMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [guardandoPrecio, setGuardandoPrecio] = useState(false);
+  const [precioFinSemana, setPrecioFinSemana] = useState<number | null>(null);
+  const [finSemanaInput, setFinSemanaInput] = useState('');
 
   const loadPrecio = useCallback(async () => {
-    const res = await fetch('/api/admin/precios/base');
-    if (!res.ok) return;
-    const data = await res.json();
-    setPrecioNoche(data.precioNoche);
-    setPrecioInput(String(data.precioNoche));
+    const [res, resAjustes] = await Promise.all([fetch('/api/admin/precios/base'), fetch('/api/admin/precios/ajustes')]);
+    if (res.ok) {
+      const data = await res.json();
+      setPrecioNoche(data.precioNoche);
+      setPrecioInput(String(data.precioNoche));
+    }
+    if (resAjustes.ok) {
+      const data = await resAjustes.json();
+      setPrecioFinSemana(data.precioFinSemana ?? null);
+      setFinSemanaInput(data.precioFinSemana ? String(data.precioFinSemana) : '');
+    }
   }, []);
 
   const loadBloqueos = useCallback(async () => {
@@ -136,20 +144,33 @@ export default function AdminPage() {
       setPrecioMsg({ ok: false, text: 'Ingresa un precio válido (número entero, sin puntos)' });
       return;
     }
+    const finSemana = finSemanaInput === '' ? null : Number(finSemanaInput);
+    if (finSemana !== null && (!Number.isInteger(finSemana) || finSemana <= 0)) {
+      setPrecioMsg({ ok: false, text: 'Ingresa un precio de viernes y sábado válido (número entero, sin puntos)' });
+      return;
+    }
     setGuardandoPrecio(true);
-    const res = await fetch('/api/admin/precios/base', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ precioNoche: valor }),
-    });
+    const [res, resFin] = await Promise.all([
+      fetch('/api/admin/precios/base', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ precioNoche: valor }),
+      }),
+      fetch('/api/admin/precios/ajustes', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ precioFinSemana: finSemana }),
+      }),
+    ]);
     setGuardandoPrecio(false);
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      setPrecioMsg({ ok: false, text: data.error || 'No se pudo guardar el precio' });
+    if (!res.ok || !resFin.ok) {
+      const data = await (res.ok ? resFin : res).json().catch(() => ({}));
+      setPrecioMsg({ ok: false, text: data.error || 'No se pudieron guardar los precios' });
       return;
     }
     setPrecioNoche(valor);
-    setPrecioMsg({ ok: true, text: 'Precio actualizado para ambas cabañas' });
+    setPrecioFinSemana(finSemana);
+    setPrecioMsg({ ok: true, text: 'Precios actualizados para ambas cabañas' });
   }
 
   async function handleDelete(id: string) {
@@ -215,7 +236,7 @@ export default function AdminPage() {
           </div>
           <div className="flex flex-col sm:flex-row sm:items-end gap-4">
             <div className="flex flex-col gap-1 flex-1">
-              <label className="text-[11px] uppercase tracking-wide text-secondary font-bold">Precio por noche (CLP)</label>
+              <label className="text-[11px] uppercase tracking-wide text-secondary font-bold">Domingo a jueves (CLP por noche)</label>
               <input
                 type="number"
                 min={1}
@@ -223,21 +244,38 @@ export default function AdminPage() {
                 inputMode="numeric"
                 value={precioInput}
                 onChange={(e) => setPrecioInput(e.target.value)}
-                placeholder="Ej: 65000"
+                placeholder="Ej: 85000"
+                className="border-0 border-b-2 border-[#dcd0bf] py-2 px-0.5 text-sm bg-transparent outline-none focus:border-[#001f14]"
+              />
+            </div>
+            <div className="flex flex-col gap-1 flex-1">
+              <label className="text-[11px] uppercase tracking-wide text-secondary font-bold">Viernes y sábado (CLP por noche)</label>
+              <input
+                type="number"
+                min={1}
+                step={1}
+                inputMode="numeric"
+                value={finSemanaInput}
+                onChange={(e) => setFinSemanaInput(e.target.value)}
+                placeholder="Vacío = igual al de domingo a jueves"
                 className="border-0 border-b-2 border-[#dcd0bf] py-2 px-0.5 text-sm bg-transparent outline-none focus:border-[#001f14]"
               />
             </div>
             <button type="submit" disabled={guardandoPrecio} className="rounded-lg py-3.5 px-6 text-[15px] font-semibold bg-[#163428] text-white hover:opacity-90 transition-opacity disabled:opacity-50">
-              {guardandoPrecio ? 'Guardando…' : 'Guardar precio'}
+              {guardandoPrecio ? 'Guardando…' : 'Guardar precios'}
             </button>
           </div>
           {precioNoche !== null && (
-            <div className="text-sm text-[#3a3a3a]">Precio actual: <span className="font-semibold">${precioNoche.toLocaleString('es-CL')}</span> por noche</div>
+            <div className="text-sm text-[#3a3a3a]">
+              Precio actual: <span className="font-semibold">${precioNoche.toLocaleString('es-CL')}</span> de domingo a jueves
+              {' · '}
+              <span className="font-semibold">${(precioFinSemana ?? precioNoche).toLocaleString('es-CL')}</span> viernes y sábado
+            </div>
           )}
           {precioMsg && <div className={`text-sm ${precioMsg.ok ? 'text-[#163428]' : 'text-red-600'}`}>{precioMsg.text}</div>}
         </form>
 
-        <TarifasAdmin precioBase={precioNoche} />
+        <TarifasAdmin precioBase={precioNoche} precioFinSemana={precioFinSemana} />
 
         <div className="flex flex-col lg:flex-row gap-10 items-start">
           <form onSubmit={handleAddBloqueo} className="flex-1 w-full bg-white rounded-2xl p-7 shadow-[0_20px_40px_rgba(29,27,22,0.05)] flex flex-col gap-4">

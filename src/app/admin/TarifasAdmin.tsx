@@ -15,12 +15,10 @@ const fmtCLP = (n: number) => '$' + n.toLocaleString('es-CL');
 const iso = (y: number, m: number, d: number) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 const fmtFecha = (f: string) => f.split('-').reverse().join('-');
 
-export default function TarifasAdmin({ precioBase }: { precioBase: number | null }) {
+export default function TarifasAdmin({ precioBase, precioFinSemana }: { precioBase: number | null; precioFinSemana: number | null }) {
   const [descuento, setDescuento] = useState('');
-  const [finSemana, setFinSemana] = useState('');
   const [ajustesMsg, setAjustesMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [guardandoAjustes, setGuardandoAjustes] = useState(false);
-  const [ajustes, setAjustes] = useState<{ descuentoPct: number; precioFinSemana: number | null }>({ descuentoPct: 0, precioFinSemana: null });
 
   const [tarifas, setTarifas] = useState<Tarifa[]>([]);
   const [editId, setEditId] = useState<string | null>(null);
@@ -44,9 +42,7 @@ export default function TarifasAdmin({ precioBase }: { precioBase: number | null
 
   const aplicar = useCallback((data: { ajustes: { descuentoPct: number; precioFinSemana: number | null } | null; tarifas: Tarifa[] | null }) => {
     if (data.ajustes) {
-      setAjustes(data.ajustes);
       setDescuento(data.ajustes.descuentoPct ? String(data.ajustes.descuentoPct) : '');
-      setFinSemana(data.ajustes.precioFinSemana ? String(data.ajustes.precioFinSemana) : '');
     }
     if (data.tarifas) setTarifas(data.tarifas);
   }, []);
@@ -58,8 +54,8 @@ export default function TarifasAdmin({ precioBase }: { precioBase: number | null
   }, [fetchTodo, aplicar]);
 
   const config: ConfigPrecios = useMemo(
-    () => ({ precioBase: precioBase ?? 65000, descuentoPct: 0, precioFinSemana: ajustes.precioFinSemana, tarifas }),
-    [precioBase, ajustes.precioFinSemana, tarifas]
+    () => ({ precioBase: precioBase ?? 65000, descuentoPct: 0, precioFinSemana, tarifas }),
+    [precioBase, precioFinSemana, tarifas]
   );
 
   async function guardarAjustes(e: React.FormEvent) {
@@ -69,7 +65,7 @@ export default function TarifasAdmin({ precioBase }: { precioBase: number | null
     const res = await fetch('/api/admin/precios/ajustes', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ descuentoPct: descuento === '' ? 0 : Number(descuento.replace(',', '.')), precioFinSemana: finSemana === '' ? null : Number(finSemana) }),
+      body: JSON.stringify({ descuentoPct: descuento === '' ? 0 : Number(descuento.replace(',', '.')) }),
     });
     setGuardandoAjustes(false);
     const data = await res.json().catch(() => ({}));
@@ -77,8 +73,7 @@ export default function TarifasAdmin({ precioBase }: { precioBase: number | null
       setAjustesMsg({ ok: false, text: data.error || 'No se pudo guardar' });
       return;
     }
-    setAjustes(data);
-    setAjustesMsg({ ok: true, text: 'Guardado para ambas cabañas' });
+    setAjustesMsg({ ok: true, text: 'Descuento guardado para ambas cabañas' });
   }
 
   function limpiarForm() {
@@ -156,20 +151,16 @@ export default function TarifasAdmin({ precioBase }: { precioBase: number | null
     <>
       <form onSubmit={guardarAjustes} className={`${CARD} mb-10`}>
         <div>
-          <h2 className="font-serif text-xl text-[#001f14]">Descuento y fin de semana</h2>
-          <div className="text-[11px] text-[#8a8a8a] mt-1">Aplican a Tiny House Naciente y Poniente.</div>
+          <h2 className="font-serif text-xl text-[#001f14]">Descuento</h2>
+          <div className="text-[11px] text-[#8a8a8a] mt-1">Aplica a Tiny House Naciente y Poniente.</div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 gap-5">
           <div className="flex flex-col gap-1">
             <label className={LABEL}>Descuento (%) sobre todas las noches</label>
             <input type="number" min={0} max={99.99} step="any" inputMode="decimal" value={descuento} onChange={(e) => setDescuento(e.target.value)} placeholder="Ej: 10 (vacío = sin descuento)" className={INPUT} />
           </div>
-          <div className="flex flex-col gap-1">
-            <label className={LABEL}>Precio noche de fin de semana (vie y sáb, CLP)</label>
-            <input type="number" min={1} step={1} inputMode="numeric" value={finSemana} onChange={(e) => setFinSemana(e.target.value)} placeholder="Vacío = igual al precio base" className={INPUT} />
-          </div>
         </div>
-        <div className="text-[11px] text-[#8a8a8a]">Las tarifas por fecha (abajo) tienen prioridad sobre el fin de semana, y el descuento se aplica al final sobre el total.</div>
+        <div className="text-[11px] text-[#8a8a8a]">Las tarifas por fecha (abajo) tienen prioridad sobre los precios base y de fin de semana, y el descuento se aplica al final sobre el total.</div>
         <div className="flex items-center gap-4 flex-wrap">
           <button type="submit" disabled={guardandoAjustes} className={BTN}>{guardandoAjustes ? 'Guardando…' : 'Guardar'}</button>
           {ajustesMsg && <div className={`text-sm ${ajustesMsg.ok ? 'text-[#163428]' : 'text-red-600'}`}>{ajustesMsg.text}</div>}
