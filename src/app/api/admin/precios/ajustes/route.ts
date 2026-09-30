@@ -23,9 +23,11 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
   const body = await req.json().catch(() => ({}));
-  const descuentoPct = Number(body.descuentoPct ?? 0);
-  const finSemanaRaw = body.precioFinSemana;
-  const precioFinSemana = finSemanaRaw === null || finSemanaRaw === "" || finSemanaRaw === undefined ? null : Number(finSemanaRaw);
+  // Los campos omitidos conservan su valor actual (cada formulario del admin guarda solo el suyo).
+  const actual = await getConfigPrecios();
+  const descuentoPct = body.descuentoPct === undefined ? actual.descuentoPct : Number(body.descuentoPct ?? 0);
+  const finSemanaRaw = body.precioFinSemana === undefined ? actual.precioFinSemana : body.precioFinSemana;
+  const precioFinSemana = finSemanaRaw === null || finSemanaRaw === "" ? null : Number(finSemanaRaw);
 
   if (!Number.isFinite(descuentoPct) || descuentoPct < 0 || descuentoPct >= 100) {
     return NextResponse.json({ error: "El descuento debe estar entre 0 y 99,99" }, { status: 400 });
