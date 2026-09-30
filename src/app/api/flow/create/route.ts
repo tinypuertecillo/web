@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { createFlowPayment } from "@/lib/flow";
+import { getPrecioNoche } from "@/lib/pricing";
 
 export const dynamic = "force-dynamic";
 
@@ -8,8 +9,6 @@ const CABIN_LABEL: Record<string, string> = {
   naciente: "Tiny House Naciente",
   poniente: "Tiny House Poniente",
 };
-
-const PRICE_PER_NIGHT = 65000;
 
 export async function POST(req: NextRequest) {
   try {
@@ -46,7 +45,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Esas fechas ya no están disponibles" }, { status: 409 });
     }
 
-    const precioTotal = noches * PRICE_PER_NIGHT;
+    const precioTotal = noches * (await getPrecioNoche());
 
     const { data: reserva, error: insertError } = await supabaseAdmin
       .from("reservas")

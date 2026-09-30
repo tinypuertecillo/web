@@ -15,8 +15,6 @@ const CABIN_LABEL: Record<Cabin, string> = {
   poniente: 'Tiny House Poniente',
 };
 
-const PRICE_PER_NIGHT = 65000;
-
 const MONTHS = [
   { m: 10, year: 2026, label: 'Octubre 2026', startWeekday: 3, days: 31 },
   { m: 11, year: 2026, label: 'Noviembre 2026', startWeekday: 6, days: 30 },
@@ -52,9 +50,18 @@ export default function ReservarPage() {
   const [loadingAvailability, setLoadingAvailability] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [precioNoche, setPrecioNoche] = useState(65000);
 
   useEffect(() => {
     let cancelled = false;
+    fetch('/api/precios')
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled && typeof data.precioNoche === 'number') setPrecioNoche(data.precioNoche);
+      })
+      .catch(() => {
+        // si falla, se mantiene el precio por defecto
+      });
     (async () => {
       try {
         const res = await fetch('/api/disponibilidad');
@@ -124,7 +131,7 @@ export default function ReservarPage() {
     return dayIndex(checkOut) - dayIndex(checkIn);
   }, [checkIn, checkOut]);
 
-  const total = nights * PRICE_PER_NIGHT;
+  const total = nights * precioNoche;
 
   const rangeHeadline = checkIn && checkOut
     ? `${checkIn.d} ${monthShort(checkIn.m)} – ${checkOut.d} ${monthShort(checkOut.m)}`
