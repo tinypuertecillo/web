@@ -5,6 +5,8 @@ import {
   MIN_NOCHES_POR_DEFECTO,
   type Capacidad,
   type ConfigPrecios,
+  type DescuentoNoches,
+  validarDescuentos,
   type ExtrasHuespedes,
   type Huespedes,
   type ResultadoPrecio,
@@ -40,7 +42,7 @@ export async function getPrecioNoche(): Promise<number | null> {
 export type ConfigPreciosGuardada = Omit<ConfigPrecios, "precioBase"> & { precioBase: number | null };
 
 // Lee toda la configuración de precios. Si las tablas nuevas todavía no
-// existen, se usan valores neutros (sin descuento ni tarifas); el precio base nunca se inventa.
+// existen, se usan valores neutros (sin descuentos ni tarifas); el precio base nunca se inventa.
 export async function getConfigPrecios(): Promise<ConfigPreciosGuardada> {
   const [precioBase, ajustes, tarifas] = await Promise.all([
     getPrecioNoche(),
@@ -48,17 +50,22 @@ export async function getConfigPrecios(): Promise<ConfigPreciosGuardada> {
     supabaseAdmin.from("tarifas_fecha").select("*").order("fecha_inicio", { ascending: true }),
   ]);
 
-  const descuento = Number(ajustes.data?.descuento_pct ?? 0);
   const finSemana = ajustes.data?.precio_fin_semana;
 
   return {
     precioBase,
-    descuentoPct: Number.isFinite(descuento) && descuento > 0 && descuento < 100 ? descuento : 0,
+    descuentos: leerDescuentos(ajustes.data),
     precioFinSemana: typeof finSemana === "number" && finSemana > 0 ? finSemana : null,
     tarifas: (tarifas.data ?? []) as Tarifa[],
     extras: leerExtras(ajustes.data),
     minNoches: leerMinNoches(ajustes.data),
   };
+}
+
+// Reglas de descuento por noches (columna descuentos_noches de ajustes_precios, lista JSON). Lo inválido se ignora.
+export function leerDescuentos(row: Record<string, unknown> | null | undefined): DescuentoNoches[] {
+  const v = validarDescuentos(row?.descuentos_noches ?? []);
+  return v.ok ? v.descuentos : [];
 }
 
 // Estadía mínima en noches (columna min_noches de ajustes_precios).

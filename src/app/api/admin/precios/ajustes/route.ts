@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { isValidSessionToken, ADMIN_COOKIE_NAME } from "@/lib/adminAuth";
 import { getConfigPrecios } from "@/lib/pricing";
-import type { ExtrasHuespedes, TipoHuesped } from "@/lib/pricingCore";
+import { validarDescuentos, type ExtrasHuespedes, type TipoHuesped } from "@/lib/pricingCore";
 
 export const dynamic = "force-dynamic";
 
@@ -14,13 +14,13 @@ export async function GET(req: NextRequest) {
   if (!checkAuth(req)) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
-  const { descuentoPct, precioFinSemana, extras, minNoches } = await getConfigPrecios();
-  return NextResponse.json({ descuentoPct, precioFinSemana, extras, minNoches });
+  const { descuentos, precioFinSemana, extras, minNoches } = await getConfigPrecios();
+  return NextResponse.json({ descuentos, precioFinSemana, extras, minNoches });
 }
 
 const TIPOS: TipoHuesped[] = ["adulto", "nino", "bebe", "mascota"];
 
-// Guarda la estadía mínima en noches, el % de descuento, el precio de fin de semana (vie y sáb; null = sin tarifa especial)
+// Guarda la estadía mínima en noches, los descuentos por noches (lista de {noches, pct}), el precio de fin de semana (vie y sáb; null = sin tarifa especial)
 // y el cobro extra por noche de cada adulto adicional, niño, bebé y mascota (% o monto fijo).
 export async function PUT(req: NextRequest) {
   if (!checkAuth(req)) {
@@ -29,14 +29,15 @@ export async function PUT(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   // Los campos omitidos conservan su valor actual (cada formulario del admin guarda solo el suyo).
   const actual = await getConfigPrecios();
-  const descuentoPct = body.descuentoPct === undefined ? actual.descuentoPct : Number(body.descuentoPct ?? 0);
   const finSemanaRaw = body.precioFinSemana === undefined ? actual.precioFinSemana : body.precioFinSemana;
   const precioFinSemana = finSemanaRaw === null || finSemanaRaw === "" ? null : Number(finSemanaRaw);
   const minNoches = body.minNoches === undefined ? actual.minNoches ?? 1 : Number(body.minNoches);
 
-  if (!Number.isFinite(descuentoPct) || descuentoPct < 0 || descuentoPct >= 100) {
-    return NextResponse.json({ error: "El descuento debe estar entre 0 y 99,99" }, { status: 400 });
+  const validados = validarDescuentos(body.descuentos === undefined ? actual.descuentos : body.descuentos);
+  if (!validados.ok) {
+    return NextResponse.json({ error: validados.error }, { status: 400 });
   }
+  const descuentos = validados.descuentos;
   if (precioFinSemana !== null && (!Number.isInteger(precioFinSemana) || precioFinSemana <= 0)) {
     return NextResponse.json({ error: "El precio de fin de semana debe ser un entero mayor a 0" }, { status: 400 });
   }
@@ -47,7 +48,7 @@ export async function PUT(req: NextRequest) {
 
   const fila: Record<string, unknown> = {
     id: 1,
-    descuento_pct: descuentoPct,
+    descuentos_noches: descuentos,
     precio_fin_semana: precioFinSemana,
     min_noches: minNoches,
     updated_at: new Date().toISOString(),
@@ -79,5 +80,5 @@ export async function PUT(req: NextRequest) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json({ descuentoPct, precioFinSemana, extras });
+  return NextResponse.json({ descuentos, precioFinSemana, extras });
 }

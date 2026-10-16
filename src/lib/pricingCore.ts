@@ -31,9 +31,13 @@ export const EXTRAS_POR_DEFECTO: ExtrasHuespedes = {
 // maxHuespedes = tope de adultos + niños juntos (los bebés no cuentan); además cada tipo tiene su propio tope.
 export type Capacidad = { maxHuespedes: number; maxAdultos: number; maxNinos: number; maxBebes: number; maxMascotas: number };
 
+// Regla de descuento: desde `noches` noches de estadía se aplica `pct` % sobre el total.
+// Si varias reglas calzan, gana la de más noches.
+export type DescuentoNoches = { noches: number; pct: number };
+
 export type ConfigPrecios = {
   precioBase: number;
-  descuentoPct: number;
+  descuentos: DescuentoNoches[];
   precioFinSemana: number | null;
   tarifas: Tarifa[];
   extras?: ExtrasHuespedes;
@@ -60,6 +64,34 @@ export type ResultadoPrecio = {
   total: number;
   desglose: NochePrecio[];
 };
+
+// Valida y ordena las reglas de descuento. Devuelve un texto de error si alguna no es válida.
+export function validarDescuentos(raw: unknown): { ok: true; descuentos: DescuentoNoches[] } | { ok: false; error: string } {
+  if (!Array.isArray(raw)) return { ok: false, error: "Los descuentos deben ser una lista" };
+  const descuentos: DescuentoNoches[] = [];
+  for (const r of raw) {
+    const noches = Number(r?.noches);
+    const pct = Number(r?.pct);
+    if (!Number.isInteger(noches) || noches < 1 || noches > 365) return { ok: false, error: "Las noches de cada descuento deben ser un entero entre 1 y 365" };
+    if (!Number.isFinite(pct) || pct <= 0 || pct >= 100) return { ok: false, error: "Cada descuento debe ser mayor a 0 y menor a 100" };
+    if (descuentos.some((d) => d.noches === noches)) return { ok: false, error: `Hay dos descuentos para ${noches} noches` };
+    descuentos.push({ noches, pct });
+  }
+  return { ok: true, descuentos: descuentos.sort((a, b) => a.noches - b.noches) };
+}
+
+// Descuento (%) que corresponde a una estadía de `noches` noches: el de la regla con más noches que se cumpla.
+export function descuentoParaNoches(noches: number, descuentos: DescuentoNoches[]): number {
+  let pct = 0;
+  let mejor = 0;
+  for (const d of descuentos) {
+    if (noches >= d.noches && d.noches >= mejor) {
+      mejor = d.noches;
+      pct = d.pct;
+    }
+  }
+  return pct;
+}
 
 // Estadía mínima por defecto (sin restricción) si ajustes_precios no tiene la columna min_noches.
 export const MIN_NOCHES_POR_DEFECTO = 1;
@@ -123,8 +155,8 @@ export function extraPorUnidad(extra: ExtraHuesped, precioNoche: number): number
 
 // Calcula el total de una estadía. fechaFin es el día de salida (no se cobra esa noche).
 // El precio de la noche es el de 1 adulto; cada adulto adicional, niño, bebé y mascota
-// suma su extra por noche (% del precio de esa noche o monto fijo). El descuento se
-// aplica al final sobre todo el subtotal.
+// suma su extra por noche (% del precio de esa noche o monto fijo). El descuento
+// depende de las noches de la estadía y se aplica al final sobre todo el subtotal.
 export function calcularPrecioConConfig(
   fechaInicio: string,
   fechaFin: string,
@@ -155,7 +187,8 @@ export function calcularPrecioConConfig(
   const subtotalNoches = desglose.reduce((acc, n) => acc + n.precio, 0);
   const extrasTotal = desglose.reduce((acc, n) => acc + (n.extras ?? 0), 0);
   const subtotal = subtotalNoches + extrasTotal;
-  const total = Math.round(subtotal * (1 - config.descuentoPct / 100));
+  const descuentoPct = descuentoParaNoches(desglose.length, config.descuentos);
+  const total = Math.round(subtotal * (1 - descuentoPct / 100));
   return {
     noches: desglose.length,
     subtotalNoches,
@@ -165,7 +198,7 @@ export function calcularPrecioConConfig(
       .map((tipo) => ({ tipo, cantidad: cantidades[tipo], monto: acumulado[tipo] })),
     huespedes,
     subtotal,
-    descuentoPct: config.descuentoPct,
+    descuentoPct,
     descuento: subtotal - total,
     total,
     desglose,

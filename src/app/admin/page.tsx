@@ -27,7 +27,7 @@ const CABIN_LABEL: Record<Cabin, string> = {
 type Pestana = SeccionAdmin | 'disponibilidad';
 
 const PESTANAS: { id: Pestana; titulo: string; detalle: string }[] = [
-  { id: 'precios', titulo: 'Precios', detalle: 'Precio por noche, descuento y estadía mínima' },
+  { id: 'precios', titulo: 'Precios', detalle: 'Precio por noche, estadía mínima y descuentos' },
   { id: 'huespedes', titulo: 'Huéspedes y capacidad', detalle: 'Cobros adicionales y máximos por cabaña' },
   { id: 'calendario', titulo: 'Tarifas por calendario', detalle: 'Temporadas y precios por fecha' },
   { id: 'disponibilidad', titulo: 'Disponibilidad', detalle: 'Bloquear y desbloquear fechas' },

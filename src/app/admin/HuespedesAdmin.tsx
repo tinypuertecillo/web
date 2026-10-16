@@ -54,7 +54,7 @@ const CAP_CAMPOS: { campo: keyof CapCampos; label: string; min: number }[] = [
   { campo: 'maxMascotas', label: 'Máx. mascotas', min: 0 },
 ];
 
-export default function HuespedesAdmin({ precioBase, descuentoPct }: { precioBase: number | null; descuentoPct: number }) {
+export default function HuespedesAdmin({ precioBase, hayDescuentos }: { precioBase: number | null; hayDescuentos: boolean }) {
   const [extras, setExtras] = useState<ExtrasForm>(aForm(EXTRAS_POR_DEFECTO));
   const [cap, setCap] = useState<CapForm>({
     naciente: { maxHuespedes: '4', maxAdultos: '4', maxNinos: '3', maxBebes: '10', maxMascotas: '1' },
@@ -83,7 +83,7 @@ export default function HuespedesAdmin({ precioBase, descuentoPct }: { precioBas
     setMsg(null);
     setGuardando(true);
 
-    // El PUT de ajustes también guarda descuento y fin de semana, así que se leen los actuales primero.
+    // El PUT de ajustes también guarda descuentos y fin de semana, así que se leen los actuales primero.
     const actual = await fetch('/api/admin/precios/ajustes').then((r) => (r.ok ? r.json() : null));
     if (!actual) {
       setGuardando(false);
@@ -95,7 +95,7 @@ export default function HuespedesAdmin({ precioBase, descuentoPct }: { precioBas
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        descuentoPct: actual.descuentoPct,
+        descuentos: actual.descuentos,
         precioFinSemana: actual.precioFinSemana,
         extras: Object.fromEntries(TIPOS.map(({ tipo }) => [tipo, { tipo: extras[tipo].tipo, valor: Number(extras[tipo].valor || 0) }])),
       }),
@@ -186,7 +186,7 @@ export default function HuespedesAdmin({ precioBase, descuentoPct }: { precioBas
 
       <div className="text-[11px] text-[#8a8a8a]">
         Ejemplo: con precio por noche de ${base.toLocaleString('es-CL')} y 2 adultos, el total por noche = precio + adicional de 1 adulto
-        {descuentoPct > 0 ? `; después se aplica el descuento de ${descuentoPct}% sobre todo` : ''}.
+        {hayDescuentos ? '; después se aplica el descuento por noches sobre todo' : ''}.
       </div>
       <div className="flex items-center gap-4 flex-wrap">
         <button type="submit" disabled={guardando} className={BTN}>{guardando ? 'Guardando…' : 'Guardar'}</button>
