@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import HuespedesAdmin from './HuespedesAdmin';
-import { precioDeNoche, type ConfigPrecios, type Tarifa } from '@/lib/pricingCore';
+import { precioDeNoche, type ConfigPrecios, type DescuentoNoches, type Tarifa } from '@/lib/pricingCore';
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 const DIAS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
@@ -20,8 +20,9 @@ export type SeccionAdmin = 'precios' | 'huespedes' | 'calendario';
 
 // Se mantiene montado siempre (conserva lo cargado y lo escrito) y muestra solo la sección activa.
 export default function TarifasAdmin({ precioBase, precioFinSemana, seccion }: { precioBase: number | null; precioFinSemana: number | null; seccion: SeccionAdmin | null }) {
-  const [descuento, setDescuento] = useState('');
-  const [descuentoGuardado, setDescuentoGuardado] = useState(0);
+  // Reglas de descuento por noches: "desde N noches, X %". Se editan como texto y se validan al guardar.
+  const [descuentos, setDescuentos] = useState<{ noches: string; pct: string }[]>([]);
+  const [descuentosGuardados, setDescuentosGuardados] = useState<DescuentoNoches[]>([]);
   const [minNoches, setMinNoches] = useState('');
   const [ajustesMsg, setAjustesMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [guardandoAjustes, setGuardandoAjustes] = useState(false);
@@ -46,10 +47,10 @@ export default function TarifasAdmin({ precioBase, precioFinSemana, seccion }: {
     };
   }, []);
 
-  const aplicar = useCallback((data: { ajustes: { descuentoPct: number; precioFinSemana: number | null; minNoches?: number } | null; tarifas: Tarifa[] | null }) => {
+  const aplicar = useCallback((data: { ajustes: { descuentos: DescuentoNoches[]; precioFinSemana: number | null; minNoches?: number } | null; tarifas: Tarifa[] | null }) => {
     if (data.ajustes) {
-      setDescuento(data.ajustes.descuentoPct ? String(data.ajustes.descuentoPct) : '');
-      setDescuentoGuardado(data.ajustes.descuentoPct);
+      setDescuentos(data.ajustes.descuentos.map((d) => ({ noches: String(d.noches), pct: String(d.pct) })));
+      setDescuentosGuardados(data.ajustes.descuentos);
       setMinNoches(data.ajustes.minNoches ? String(data.ajustes.minNoches) : '1');
     }
     if (data.tarifas) setTarifas(data.tarifas);
@@ -62,7 +63,7 @@ export default function TarifasAdmin({ precioBase, precioFinSemana, seccion }: {
   }, [fetchTodo, aplicar]);
 
   const config: ConfigPrecios = useMemo(
-    () => ({ precioBase: precioBase ?? 0, descuentoPct: 0, precioFinSemana, tarifas }),
+    () => ({ precioBase: precioBase ?? 0, descuentos: [], precioFinSemana, tarifas }),
     [precioBase, precioFinSemana, tarifas]
   );
 
@@ -73,7 +74,10 @@ export default function TarifasAdmin({ precioBase, precioFinSemana, seccion }: {
     const res = await fetch('/api/admin/precios/ajustes', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ descuentoPct: descuento === '' ? 0 : Number(descuento.replace(',', '.')), minNoches: minNoches === '' ? 1 : Number(minNoches) }),
+      body: JSON.stringify({
+        descuentos: descuentos.map((d) => ({ noches: Number(d.noches), pct: Number(d.pct.replace(',', '.')) })),
+        minNoches: minNoches === '' ? 1 : Number(minNoches),
+      }),
     });
     setGuardandoAjustes(false);
     const data = await res.json().catch(() => ({}));
@@ -81,8 +85,9 @@ export default function TarifasAdmin({ precioBase, precioFinSemana, seccion }: {
       setAjustesMsg({ ok: false, text: data.error || 'No se pudo guardar' });
       return;
     }
-    setDescuentoGuardado(data.descuentoPct);
-    setAjustesMsg({ ok: true, text: 'Descuento y estadía mínima guardados para ambas cabañas' });
+    setDescuentosGuardados(data.descuentos);
+    setDescuentos(data.descuentos.map((d: DescuentoNoches) => ({ noches: String(d.noches), pct: String(d.pct) })));
+    setAjustesMsg({ ok: true, text: 'Descuentos y estadía mínima guardados para ambas cabañas' });
   }
 
   function limpiarForm() {
@@ -163,17 +168,40 @@ export default function TarifasAdmin({ precioBase, precioFinSemana, seccion }: {
           <h2 className="font-serif text-xl text-[#001f14]">Descuento y estadía mínima</h2>
           <div className="text-[11px] text-[#8a8a8a] mt-1">Aplica a Tiny House Naciente y Poniente.</div>
         </div>
-        <div className="grid grid-cols-1 gap-5">
-          <div className="flex flex-col gap-1">
-            <label className={LABEL}>Descuento (%) sobre todas las noches</label>
-            <input type="number" min={0} max={99.99} step="any" inputMode="decimal" value={descuento} onChange={(e) => setDescuento(e.target.value)} placeholder="Ej: 10 (vacío = sin descuento)" className={INPUT} />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className={LABEL}>Mínimo de noches por reserva</label>
-            <input type="number" min={1} max={365} step={1} inputMode="numeric" value={minNoches} onChange={(e) => setMinNoches(e.target.value)} placeholder="Ej: 2" className={INPUT} />
+        <div className="flex flex-col gap-1 max-w-xs">
+          <label className={LABEL}>Mínimo de noches por reserva</label>
+          <input type="number" min={1} max={365} step={1} inputMode="numeric" value={minNoches} onChange={(e) => setMinNoches(e.target.value)} placeholder="Ej: 2" className={INPUT} />
+        </div>
+
+        <div className="h-px bg-[#eee7da]" />
+        <div>
+          <div className="text-sm font-semibold text-[#001f14]">Descuentos por cantidad de noches</div>
+          <div className="text-[11px] text-[#8a8a8a] mt-1">
+            Cada regla dice: desde N noches se descuenta X % del total. Si una reserva cumple varias, se aplica la de más noches. Ej.: 2 noches → 5 %, 3 noches → 7 %.
           </div>
         </div>
-        <div className="text-[11px] text-[#8a8a8a]">Las tarifas por fecha (abajo) tienen prioridad sobre los precios base y de fin de semana, y el descuento se aplica al final sobre el total.</div>
+        {descuentos.length === 0 && <div className="text-sm text-[#8a8a8a]">No hay descuentos: todas las reservas pagan el precio completo.</div>}
+        <div className="flex flex-col gap-3">
+          {descuentos.map((d, i) => (
+            <div key={i} className="grid grid-cols-[1fr_1fr_auto] gap-4 items-end">
+              <div className="flex flex-col gap-1">
+                <label className={LABEL}>Desde (noches)</label>
+                <input type="number" min={1} max={365} step={1} inputMode="numeric" value={d.noches} onChange={(e) => setDescuentos(descuentos.map((x, j) => (j === i ? { ...x, noches: e.target.value } : x)))} className={INPUT} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className={LABEL}>Descuento (%)</label>
+                <input type="number" min={0.01} max={99.99} step="any" inputMode="decimal" value={d.pct} onChange={(e) => setDescuentos(descuentos.map((x, j) => (j === i ? { ...x, pct: e.target.value } : x)))} className={INPUT} />
+              </div>
+              <button type="button" onClick={() => setDescuentos(descuentos.filter((_, j) => j !== i))} className="text-xs underline font-semibold text-red-600 pb-3">Quitar</button>
+            </div>
+          ))}
+        </div>
+        <div>
+          <button type="button" onClick={() => setDescuentos([...descuentos, { noches: '', pct: '' }])} className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#eee7da] text-[#3a3a3a] hover:bg-[#e5dbcd]">
+            + Agregar descuento
+          </button>
+        </div>
+        <div className="text-[11px] text-[#8a8a8a]">El descuento se aplica al final sobre el total de la reserva, incluso si hay tarifas por fecha.</div>
         <div className="flex items-center gap-4 flex-wrap">
           <button type="submit" disabled={guardandoAjustes} className={BTN}>{guardandoAjustes ? 'Guardando…' : 'Guardar'}</button>
           {ajustesMsg && <div className={`text-sm ${ajustesMsg.ok ? 'text-[#163428]' : 'text-red-600'}`}>{ajustesMsg.text}</div>}
@@ -181,7 +209,7 @@ export default function TarifasAdmin({ precioBase, precioFinSemana, seccion }: {
       </form>
 
       <div className={seccion === 'huespedes' ? '' : 'hidden'}>
-        <HuespedesAdmin precioBase={precioBase} descuentoPct={descuentoGuardado} />
+        <HuespedesAdmin precioBase={precioBase} hayDescuentos={descuentosGuardados.length > 0} />
       </div>
 
       <div className={`${CARD} ${seccion === 'calendario' ? '' : 'hidden'}`}>
