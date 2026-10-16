@@ -142,7 +142,7 @@ export default function HuespedesAdmin({ precioBase, descuentoPct }: { precioBas
         </div>
       </div>
 
-      <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-x-10 gap-y-5">
         {TIPOS.map(({ tipo, titulo, detalle }) => (
           <div key={tipo} className="grid grid-cols-1 sm:grid-cols-[1.2fr_1fr_1fr_1fr] gap-3 sm:items-end">
             <div className="flex flex-col">

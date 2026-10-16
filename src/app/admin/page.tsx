@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
-import TarifasAdmin from './TarifasAdmin';
+import TarifasAdmin, { type SeccionAdmin } from './TarifasAdmin';
 
 type Cabin = 'naciente' | 'poniente';
 
@@ -24,6 +24,15 @@ const CABIN_LABEL: Record<Cabin, string> = {
   poniente: 'Tiny House Poniente',
 };
 
+type Pestana = SeccionAdmin | 'disponibilidad';
+
+const PESTANAS: { id: Pestana; titulo: string; detalle: string }[] = [
+  { id: 'precios', titulo: 'Precios', detalle: 'Precio por noche, descuento y estadía mínima' },
+  { id: 'huespedes', titulo: 'Huéspedes y capacidad', detalle: 'Cobros adicionales y máximos por cabaña' },
+  { id: 'calendario', titulo: 'Tarifas por calendario', detalle: 'Temporadas y precios por fecha' },
+  { id: 'disponibilidad', titulo: 'Disponibilidad', detalle: 'Bloquear y desbloquear fechas' },
+];
+
 export default function AdminPage() {
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [password, setPassword] = useState('');
@@ -40,6 +49,7 @@ export default function AdminPage() {
   const [notas, setNotas] = useState('');
   const [formError, setFormError] = useState('');
 
+  const [pestana, setPestana] = useState<Pestana>('precios');
   const [precioNoche, setPrecioNoche] = useState<number | null>(null);
   const [precioInput, setPrecioInput] = useState('');
   const [precioMsg, setPrecioMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -52,7 +62,7 @@ export default function AdminPage() {
     if (res.ok) {
       const data = await res.json();
       setPrecioNoche(data.precioNoche);
-      setPrecioInput(String(data.precioNoche));
+      setPrecioInput(data.precioNoche === null ? '' : String(data.precioNoche));
     }
     if (resAjustes.ok) {
       const data = await resAjustes.json();
@@ -218,8 +228,8 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-surface text-on-surface font-sans flex flex-col">
       <SiteHeader />
-      <div className="max-w-5xl mx-auto px-5 md:px-8 py-14 md:py-20 w-full flex-1">
-        <div className="flex items-center justify-between mb-10 flex-wrap gap-3">
+      <div className="max-w-[1500px] mx-auto px-5 md:px-10 py-10 md:py-14 w-full flex-1">
+        <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
           <div>
             <div className="text-xs tracking-[2px] uppercase text-secondary font-semibold mb-2">Tiny Puertecillo</div>
             <h1 className="font-serif text-3xl md:text-4xl text-[#001f14]">Panel de administración</h1>
@@ -229,7 +239,25 @@ export default function AdminPage() {
           </button>
         </div>
 
-        <form onSubmit={handleGuardarPrecio} className="w-full bg-white rounded-2xl p-7 shadow-[0_20px_40px_rgba(29,27,22,0.05)] flex flex-col gap-4 mb-10">
+        <nav className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8" aria-label="Secciones del panel">
+          {PESTANAS.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setPestana(t.id)}
+              aria-current={pestana === t.id ? 'page' : undefined}
+              className={`text-left rounded-xl px-5 py-4 transition-colors ${
+                pestana === t.id ? 'bg-[#163428] text-white' : 'bg-white text-[#3a3a3a] hover:bg-[#eee7da] shadow-[0_8px_20px_rgba(29,27,22,0.04)]'
+              }`}
+            >
+              <div className="font-serif text-lg leading-tight">{t.titulo}</div>
+              <div className={`text-[11px] mt-1 ${pestana === t.id ? 'text-white/70' : 'text-[#8a8a8a]'}`}>{t.detalle}</div>
+            </button>
+          ))}
+        </nav>
+
+        <div className={pestana === 'precios' ? 'grid grid-cols-1 lg:grid-cols-2 gap-8 items-start' : ''}>
+        <form onSubmit={handleGuardarPrecio} className={`w-full bg-white rounded-2xl p-7 shadow-[0_20px_40px_rgba(29,27,22,0.05)] flex flex-col gap-4 ${pestana === 'precios' ? '' : 'hidden'}`}>
           <div>
             <h2 className="font-serif text-xl text-[#001f14]">Precio base por noche</h2>
             <div className="text-[11px] text-[#8a8a8a] mt-1">Aplica a Tiny House Naciente y Poniente.</div>
@@ -244,7 +272,7 @@ export default function AdminPage() {
                 inputMode="numeric"
                 value={precioInput}
                 onChange={(e) => setPrecioInput(e.target.value)}
-                placeholder="Ej: 85000"
+                placeholder="Precio por noche en CLP"
                 className="border-0 border-b-2 border-[#dcd0bf] py-2 px-0.5 text-sm bg-transparent outline-none focus:border-[#001f14]"
               />
             </div>
@@ -275,9 +303,10 @@ export default function AdminPage() {
           {precioMsg && <div className={`text-sm ${precioMsg.ok ? 'text-[#163428]' : 'text-red-600'}`}>{precioMsg.text}</div>}
         </form>
 
-        <TarifasAdmin precioBase={precioNoche} precioFinSemana={precioFinSemana} />
+        <TarifasAdmin precioBase={precioNoche} precioFinSemana={precioFinSemana} seccion={pestana === 'disponibilidad' ? null : pestana} />
+        </div>
 
-        <div className="flex flex-col lg:flex-row gap-10 items-start">
+        <div className={`grid grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-8 items-start ${pestana === 'disponibilidad' ? '' : 'hidden'}`}>
           <form onSubmit={handleAddBloqueo} className="flex-1 w-full bg-white rounded-2xl p-7 shadow-[0_20px_40px_rgba(29,27,22,0.05)] flex flex-col gap-4">
             <h2 className="font-serif text-xl text-[#001f14]">Bloquear fechas</h2>
             <div className="flex gap-3">
@@ -332,7 +361,7 @@ export default function AdminPage() {
           <div className="flex-1 w-full bg-white rounded-2xl p-7 shadow-[0_20px_40px_rgba(29,27,22,0.05)] flex flex-col gap-4">
             <h2 className="font-serif text-xl text-[#001f14]">Fechas bloqueadas</h2>
             {bloqueos.length === 0 && <div className="text-sm text-[#8a8a8a]">No hay fechas bloqueadas.</div>}
-            <div className="flex flex-col gap-3 max-h-[520px] overflow-y-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[640px] overflow-y-auto content-start">
               {bloqueos.map((b) => (
                 <div key={b.id} className="border border-[#eee7da] rounded-lg p-4 flex flex-col gap-1.5">
                   <div className="flex items-center justify-between">

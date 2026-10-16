@@ -16,7 +16,10 @@ const fmtCLP = (n: number) => '$' + n.toLocaleString('es-CL');
 const iso = (y: number, m: number, d: number) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 const fmtFecha = (f: string) => f.split('-').reverse().join('-');
 
-export default function TarifasAdmin({ precioBase, precioFinSemana }: { precioBase: number | null; precioFinSemana: number | null }) {
+export type SeccionAdmin = 'precios' | 'huespedes' | 'calendario';
+
+// Se mantiene montado siempre (conserva lo cargado y lo escrito) y muestra solo la sección activa.
+export default function TarifasAdmin({ precioBase, precioFinSemana, seccion }: { precioBase: number | null; precioFinSemana: number | null; seccion: SeccionAdmin | null }) {
   const [descuento, setDescuento] = useState('');
   const [descuentoGuardado, setDescuentoGuardado] = useState(0);
   const [minNoches, setMinNoches] = useState('');
@@ -59,7 +62,7 @@ export default function TarifasAdmin({ precioBase, precioFinSemana }: { precioBa
   }, [fetchTodo, aplicar]);
 
   const config: ConfigPrecios = useMemo(
-    () => ({ precioBase: precioBase ?? 65000, descuentoPct: 0, precioFinSemana, tarifas }),
+    () => ({ precioBase: precioBase ?? 0, descuentoPct: 0, precioFinSemana, tarifas }),
     [precioBase, precioFinSemana, tarifas]
   );
 
@@ -155,12 +158,12 @@ export default function TarifasAdmin({ precioBase, precioFinSemana }: { precioBa
 
   return (
     <>
-      <form onSubmit={guardarAjustes} className={`${CARD} mb-10`}>
+      <form onSubmit={guardarAjustes} className={`${CARD} ${seccion === 'precios' ? '' : 'hidden'}`}>
         <div>
           <h2 className="font-serif text-xl text-[#001f14]">Descuento y estadía mínima</h2>
           <div className="text-[11px] text-[#8a8a8a] mt-1">Aplica a Tiny House Naciente y Poniente.</div>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 gap-5">
           <div className="flex flex-col gap-1">
             <label className={LABEL}>Descuento (%) sobre todas las noches</label>
             <input type="number" min={0} max={99.99} step="any" inputMode="decimal" value={descuento} onChange={(e) => setDescuento(e.target.value)} placeholder="Ej: 10 (vacío = sin descuento)" className={INPUT} />
@@ -177,9 +180,11 @@ export default function TarifasAdmin({ precioBase, precioFinSemana }: { precioBa
         </div>
       </form>
 
-      <HuespedesAdmin precioBase={precioBase} descuentoPct={descuentoGuardado} />
+      <div className={seccion === 'huespedes' ? '' : 'hidden'}>
+        <HuespedesAdmin precioBase={precioBase} descuentoPct={descuentoGuardado} />
+      </div>
 
-      <div className={`${CARD} mb-10`}>
+      <div className={`${CARD} ${seccion === 'calendario' ? '' : 'hidden'}`}>
         <div>
           <h2 className="font-serif text-xl text-[#001f14]">Tarifas por calendario</h2>
           <div className="text-[11px] text-[#8a8a8a] mt-1">Crea temporadas por rango de fechas o haz clic en un día del calendario para cambiar su precio manualmente.</div>
@@ -259,7 +264,7 @@ export default function TarifasAdmin({ precioBase, precioFinSemana }: { precioBa
         <div className="h-px bg-[#eee7da]" />
         <div className="text-sm font-semibold text-[#001f14]">Tarifas creadas</div>
         {tarifas.length === 0 && <div className="text-sm text-[#8a8a8a]">No hay tarifas por fecha todavía.</div>}
-        <div className="flex flex-col gap-2 max-h-[320px] overflow-y-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 max-h-[420px] overflow-y-auto">
           {tarifas.map((t) => (
             <div key={t.id} className="border border-[#eee7da] rounded-lg p-3 flex items-center justify-between gap-3 flex-wrap">
               <div className="flex flex-col">
