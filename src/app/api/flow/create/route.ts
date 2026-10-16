@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { createFlowPayment } from "@/lib/flow";
-import { calcularPrecio, esFechaValida, getCapacidades, getMinNoches } from "@/lib/pricing";
+import { calcularPrecio, esFechaValida, getCapacidades, getMinNoches, PrecioNoConfiguradoError } from "@/lib/pricing";
 import { HUESPEDES_POR_DEFECTO, validarHuespedes } from "@/lib/pricingCore";
 
 export const dynamic = "force-dynamic";
@@ -111,7 +111,10 @@ export async function POST(req: NextRequest) {
       const message = flowError instanceof Error ? flowError.message : "Error al conectar con Flow";
       return NextResponse.json({ error: message }, { status: 502 });
     }
-  } catch {
+  } catch (e) {
+    if (e instanceof PrecioNoConfiguradoError) {
+      return NextResponse.json({ error: "Los precios no están disponibles por ahora. Escríbenos por WhatsApp." }, { status: 503 });
+    }
     return NextResponse.json({ error: "Solicitud inválida" }, { status: 400 });
   }
 }

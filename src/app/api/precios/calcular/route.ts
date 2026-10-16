@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { calcularPrecio, esFechaValida, getCapacidades } from "@/lib/pricing";
+import { calcularPrecio, esFechaValida, getCapacidades, PrecioNoConfiguradoError } from "@/lib/pricing";
 import { HUESPEDES_POR_DEFECTO, validarHuespedes } from "@/lib/pricingCore";
 
 export const dynamic = "force-dynamic";
@@ -16,5 +16,12 @@ export async function POST(req: NextRequest) {
   if (!validarHuespedes(guests, cap)) {
     return NextResponse.json({ error: "Cantidad de huéspedes o mascotas no válida para esta cabaña" }, { status: 400 });
   }
-  return NextResponse.json(await calcularPrecio(fechaInicio, fechaFin, guests));
+  try {
+    return NextResponse.json(await calcularPrecio(fechaInicio, fechaFin, guests));
+  } catch (e) {
+    if (e instanceof PrecioNoConfiguradoError) {
+      return NextResponse.json({ error: "Los precios no están disponibles por ahora. Escríbenos por WhatsApp." }, { status: 503 });
+    }
+    throw e;
+  }
 }

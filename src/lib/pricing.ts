@@ -14,13 +14,17 @@ import {
 
 export * from "@/lib/pricingCore";
 
-// Precio usado si la tabla precios_cabana no existe o no tiene filas,
-// para que las reservas nunca queden sin precio.
-export const PRECIO_NOCHE_POR_DEFECTO = 65000;
+// El precio base por noche (único para ambas cabañas) se edita solo desde /admin y se guarda en la
+// tabla precios_cabana. No hay un precio de respaldo en el código: si no está configurado, getPrecioNoche
+// devuelve null y las cotizaciones y reservas fallan con PrecioNoConfiguradoError.
+export class PrecioNoConfiguradoError extends Error {
+  constructor() {
+    super("El precio por noche no está configurado. Defínelo en /admin.");
+    this.name = "PrecioNoConfiguradoError";
+  }
+}
 
-// Precio base por noche, único para ambas cabañas (naciente y poniente).
-// Se edita desde /admin y se guarda en la tabla precios_cabana.
-export async function getPrecioNoche(): Promise<number> {
+export async function getPrecioNoche(): Promise<number | null> {
   const { data, error } = await supabaseAdmin
     .from("precios_cabana")
     .select("precio_noche")
@@ -28,15 +32,16 @@ export async function getPrecioNoche(): Promise<number> {
     .limit(1);
 
   const precio = data?.[0]?.precio_noche;
-  if (error || typeof precio !== "number" || precio <= 0) {
-    return PRECIO_NOCHE_POR_DEFECTO;
-  }
+  if (error || typeof precio !== "number" || precio <= 0) return null;
   return precio;
 }
 
+// Configuración de precios tal como está guardada: precioBase es null mientras no se defina en /admin.
+export type ConfigPreciosGuardada = Omit<ConfigPrecios, "precioBase"> & { precioBase: number | null };
+
 // Lee toda la configuración de precios. Si las tablas nuevas todavía no
-// existen, se usan los valores por defecto (sin descuento ni tarifas).
-export async function getConfigPrecios(): Promise<ConfigPrecios> {
+// existen, se usan valores neutros (sin descuento ni tarifas); el precio base nunca se inventa.
+export async function getConfigPrecios(): Promise<ConfigPreciosGuardada> {
   const [precioBase, ajustes, tarifas] = await Promise.all([
     getPrecioNoche(),
     supabaseAdmin.from("ajustes_precios").select("*").eq("id", 1).maybeSingle(),
@@ -103,5 +108,7 @@ export async function getCapacidades(): Promise<Record<"naciente" | "poniente", 
 }
 
 export async function calcularPrecio(fechaInicio: string, fechaFin: string, huespedes?: Huespedes): Promise<ResultadoPrecio> {
-  return calcularPrecioConConfig(fechaInicio, fechaFin, await getConfigPrecios(), huespedes);
+  const { precioBase, ...resto } = await getConfigPrecios();
+  if (precioBase === null) throw new PrecioNoConfiguradoError();
+  return calcularPrecioConConfig(fechaInicio, fechaFin, { ...resto, precioBase }, huespedes);
 }
