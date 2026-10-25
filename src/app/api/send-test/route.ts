@@ -1,12 +1,17 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import axios from 'axios';
+import { isValidSessionToken, ADMIN_COOKIE_NAME } from '@/lib/adminAuth';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+    if (!isValidSessionToken(request.cookies.get(ADMIN_COOKIE_NAME)?.value)) {
+        return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const rawKey = process.env.BREVO_API_KEY || "";
     const BREVO_KEY_CLEAN = rawKey.trim().replace(/^['"]|['"]$/g, '');
 

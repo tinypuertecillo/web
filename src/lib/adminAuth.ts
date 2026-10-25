@@ -3,7 +3,11 @@ import crypto from "crypto";
 const COOKIE_NAME = "tp_admin_session";
 
 function secret() {
-  return process.env.ADMIN_PASSWORD || "tinypuertecillo-admin-2026";
+  const clave = process.env.ADMIN_PASSWORD;
+  if (!clave) {
+    throw new Error("Falta la variable de entorno ADMIN_PASSWORD");
+  }
+  return clave;
 }
 
 function tokenFor(dayStamp: string) {

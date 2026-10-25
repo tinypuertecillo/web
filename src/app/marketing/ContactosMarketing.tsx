@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { supabase } from "../../lib/supabase";
 import { Search, Plus, Loader2, AlertCircle } from "lucide-react";
 
 export default function ContactosMarketing() {
@@ -31,35 +30,14 @@ export default function ContactosMarketing() {
   const cargarDatos = async () => {
     setCargando(true);
     try {
-      let todosLosContactos: any[] = [];
-      let from = 0;
-      const batchSize = 1000;
-      let hayMas = true;
-
-      while (hayMas) {
-        const { data, error } = await supabase
-          .from("contactos")
-          .select("*")
-          .ilike("estado", "activo")
-          .range(from, from + batchSize - 1);
-
-        if (error) {
-          console.error("Error loading contacts:", error);
-          throw error;
-        }
-
-        if (data && data.length > 0) {
-          todosLosContactos = [...todosLosContactos, ...data];
-          from += batchSize;
-          if (data.length < batchSize) {
-            hayMas = false;
-          }
-        } else {
-          hayMas = false;
-        }
+      const res = await fetch("/api/admin/marketing?recurso=contactos");
+      if (res.status === 401) {
+        alert("Inicia sesión en /admin para ver los contactos.");
+        return;
       }
-
-      setContactos(todosLosContactos || []);
+      if (!res.ok) throw new Error("No se pudieron leer los contactos");
+      const data = await res.json();
+      setContactos(data.contactos || []);
     } catch (error) {
       console.error("Error al cargar:", error);
     } finally {
@@ -78,26 +56,20 @@ export default function ContactosMarketing() {
 
     try {
       setGuardando(true);
-      const { error } = await supabase
-        .from("contactos")
-        .insert([
-          {
-            nombre: nuevoNombre.trim(),
-            correo: nuevoCorreo.trim().toLowerCase(),
-            celular: nuevoCelular.trim() || null,
-            empresa: nuevaEmpresa.trim() || null,
-            ciudad: nuevaCiudad.trim() || null,
-            estado: 'activo',
-            etapa: 'marketing',
-            etapa_envio: 1
-          }
-        ]);
-
-      if (error) {
-        if (error.code === '23505') {
-          throw new Error("El correo ingresado ya existe en la base de datos.");
-        }
-        throw error;
+      const res = await fetch("/api/admin/marketing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: nuevoNombre,
+          correo: nuevoCorreo,
+          celular: nuevoCelular,
+          empresa: nuevaEmpresa,
+          ciudad: nuevaCiudad,
+        }),
+      });
+      if (!res.ok) {
+        const cuerpo = await res.json().catch(() => ({}));
+        throw new Error(res.status === 401 ? "Inicia sesión en /admin para agregar contactos." : cuerpo.error || "Error al guardar el contacto.");
       }
 
       // Limpiar y refrescar
@@ -119,12 +91,12 @@ export default function ContactosMarketing() {
     try {
       setGuardandoInline(true);
       const val = empresaTemp.trim() || null;
-      const { error } = await supabase
-        .from("contactos")
-        .update({ empresa: val })
-        .eq("id", id);
-
-      if (error) throw error;
+      const res = await fetch("/api/admin/marketing", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recurso: "contactos", id, empresa: val }),
+      });
+      if (!res.ok) throw new Error("No se pudo actualizar la empresa.");
 
       // Update state local
       setContactos(contactos.map(c => c.id === id ? { ...c, empresa: val } : c));

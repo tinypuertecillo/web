@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { supabase } from "../../lib/supabase";
 import { Mail, Search, RefreshCcw, AlertCircle, HelpCircle } from "lucide-react";
 
 interface TrazabilidadLog {
@@ -31,24 +30,14 @@ export default function TrazabilidadBrevo() {
       setLoading(true);
       setError("");
       
-      const { data, error: dbError } = await supabase
-        .from("trazabilidad_correos")
-        .select(`
-          id,
-          email,
-          fecha,
-          estado,
-          mensaje_id,
-          created_at,
-          contactos (
-            nombre
-          )
-        `)
-        .order("created_at", { ascending: false })
-        .limit(100);
-
-      if (dbError) throw dbError;
-      setLogs((data as any) || []);
+      const res = await fetch("/api/admin/marketing?recurso=trazabilidad");
+      if (res.status === 401) {
+        setError("Inicia sesión en /admin para ver la trazabilidad de envíos.");
+        return;
+      }
+      if (!res.ok) throw new Error("No se pudo leer la trazabilidad");
+      const data = await res.json();
+      setLogs(data.logs || []);
     } catch (err: any) {
       console.error("Error loading trazabilidad:", err);
       setError("No se pudo cargar la trazabilidad de envíos.");
