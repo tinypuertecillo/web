@@ -19,7 +19,9 @@ function todayStamp() {
 }
 
 export function checkAdminPassword(password: string) {
-  return password === secret();
+  // Se comparan los hash para que el tiempo de respuesta no dependa de cuántos caracteres coinciden
+  const hash = (s: string) => crypto.createHash("sha256").update(s).digest();
+  return crypto.timingSafeEqual(hash(password), hash(secret()));
 }
 
 export function makeSessionToken() {
