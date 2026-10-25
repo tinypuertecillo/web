@@ -1,60 +1,60 @@
 # Checklist del protocolo de pruebas: Tiny Puertecillo
 
-Actualizado: 2026-10-25. Protocolo completo: `_cerebro/recursos-compartidos/protocolo-pruebas.md`.
+Actualizado: 2026-10-25 (noche). Protocolo completo: `_cerebro/recursos-compartidos/protocolo-pruebas.md`. Autonomía y qué debe habilitar Mario: `protocolo-autonomia.md`.
 
-## Hecho
-- [x] Protocolo general escrito en Cerebro y enlazado (INDICE y CLAUDE.md)
-- [x] Línea base de seguridad de Tiny (hallazgos en la ficha)
+## Pendiente de Mario (en orden de importancia)
+- [ ] Confirmar que `ADMIN_PASSWORD` de Vercel **no** es `tinypuertecillo-admin-2026`. El repo del sitio es público y esa clave está en su historial; si es la misma, cambiarla hoy por una larga y redesplegar
+- [ ] Decidir si el repo `tinypuertecillo/web` pasa a privado (recomendado; Vercel sigue publicando igual)
+- [ ] Quitar `SYNC_SECRET` de las variables de Vercel del sitio y de su `.env.local` (ya no se usa)
+- [ ] Guardar la frase `BACKUP_PASSPHRASE` en un gestor de claves (sin ella los respaldos no se abren)
+- [ ] Mirar en el panel de Vercel que `FLOW_API_URL` apunte a Flow real y no al sandbox (la variable existe; yo no leo su valor)
+- [ ] Cuentas gratis de UptimeRobot y Sentry, y el correo donde quiere los avisos
+- [ ] Habilitar autonomía (una vez): iniciar sesión en Supabase, Vercel, Flow sandbox y Cloudflare en la ventana de Claude in Chrome; `vercel login`; `npx wrangler login`
+- [ ] Confirmar con Airbnb que los descuentos (17 % y 20 %) estén alineados antes de publicarlos en correos o redes
 
-## URGENTE: datos abiertos en Supabase
-- [x] Mover la página `/marketing` a `/api/admin/marketing` protegida (hecho en local 2026-10-25, sin commit; probado: sin sesión 401, validaciones 400; lectura probada en local con la llave nueva: contactos 1107, mensajes 8, trazabilidad 100; sin sesión 401)
-- [x] Mario: actualizar `SUPABASE_SERVICE_ROLE_KEY` en `.env.local` (hecho 2026-10-25, llave `sb_secret_` nueva, funciona)
-- [x] Mario revisó `/marketing` en local; commit `94431bb` y push a la rama `proteger-datos-marketing` (2026-10-25)
-- [x] PR #11 mergeado y publicado en producción (commit `06dc7b2`, 2026-10-25); sin sesión todo da 401 como se espera
-- [x] Mario probó en producción: con sesión de admin `/marketing` mostró los 1107 contactos; en ventana privada, sin sesión, no muestra nada (la protección funciona)
-- [x] Decisión de Mario: eliminar la página `/marketing` (hecho en local en la rama `eliminar-pagina-marketing`; PR #12 mergeado y publicado, commit `b26b67b`; rutas borradas dan 404 y el sitio sigue bien)
-- [x] SQL `supabase_cerrar_acceso_publico.sql` ejecutado por Mario (2026-10-25); prueba con la llave pública: 9 tablas dan 401; la llave de servicio sigue leyendo todo
-- [ ] Después del SQL: Mario abre `app.tinypuertecillo.cl` y confirma que los contactos cargan (la app usa solo la llave de servicio en su servidor)
-- [ ] Decidir respaldos: exportación manual periódica o plan Pro (Mario)
-
-## Corregir hallazgos de Tiny (en local, sin commit hasta que Mario revise)
-- [x] Quitar la contraseña de admin por defecto del código (hecho en local; `ADMIN_PASSWORD` sí existe en Vercel, así que es seguro publicarlo)
-- [x] Proteger `/api/send-test` con la sesión de admin (hecho en local; la página /marketing la usa, por eso no se borra). Nota: el sitio no tiene `BREVO_API_KEY` en Vercel, así que esa ruta hoy no envía nada en producción
-- [ ] `/api/sync-contacts`: exigir `SYNC_SECRET` y sacar la clave de Ecomoving del código
-- [x] Pago Flow: no duplicar bloqueos, revisar monto y fechas (PR #13 mergeado y publicado el 2026-10-25, commit `38120c1`; probado con Flow sandbox: aviso repetido, monto distinto y conflicto OK; falta observar el primer pago real)
-- [x] Límite de intentos en el login de admin (hecho en local; 5 fallos por IP en 15 min)
-- [x] Avisar si falta la llave de servicio (hecho en local; Vercel sí tiene `SUPABASE_SERVICE_ROLE_KEY`)
-- [x] Cabeceras de seguridad (hecho en local; falta una CSP con `script-src`, que se prueba aparte)
-
-## Pendiente de Mario
-- [x] Llaves de Flow sandbox en `.env.local` (puestas por Mario, verificadas 2026-10-25)
-- [ ] `ADMIN_PASSWORD` en Vercel ya existe; cambiarla solo si alguna vez se compartió
-- [ ] Confirmar que producción usa `FLOW_API_URL` real (la variable existe en Vercel; Mario mira el valor en el panel, yo no lo leo)
-- [x] `send-test`: se protegió con sesión de admin (la página /marketing la usa)
-- [ ] Cuentas de UptimeRobot y Sentry, y correo de avisos
-
-## Habilitar autonomía (Mario, una vez; detalle en `protocolo-autonomia.md`)
-- [ ] Iniciar sesión en Supabase, Vercel, Flow sandbox y Cloudflare en la ventana de Claude in Chrome
-- [ ] Reconectar el conector de Supabase con la cuenta de Tiny (o usar la sesión de Chrome)
-- [ ] `npx wrangler login` (Cloudflare) y `vercel login` (cuenta de Tiny)
-
-## Niveles del protocolo
-- [x] Revisar permisos (RLS) de la base de Supabase de Tiny (hecho 2026-10-25, ver arriba)
-- [ ] Nivel 1: GitHub Actions, gitleaks, Dependabot
-- [ ] Nivel 2: Playwright (pago, doble reserva, datos hostiles)
-- [ ] Nivel 3: revisión semanal (ZAP, Lighthouse, cabeceras)
-- [ ] Nivel 5: UptimeRobot y Sentry
+## Pendiente de Claude
+- [ ] Probar una restauración real del respaldo en una base de pruebas vacía (necesita un proyecto Supabase gratis aparte; lo guía Claude)
+- [ ] `flow/create`: si Flow rechaza crear el pago, queda una reserva `pendiente` huérfana (borrarla o marcarla `rechazada`)
+- [ ] CSP completa con `script-src` (requiere nonces; se prueba aparte)
+- [ ] Nivel 1: GitHub Actions en el sitio, gitleaks, Dependabot
+- [ ] Nivel 2: Playwright (pago con Flow sandbox, doble reserva, datos hostiles). El pago ya se probó a mano el 2026-10-25
+- [ ] Nivel 3: revisión semanal automática (ZAP, Lighthouse, cabeceras)
+- [ ] Nivel 5: UptimeRobot y Sentry (depende de las cuentas de Mario)
 - [ ] Nivel 4: lista antes de entregar, anotada en la ficha
+- [ ] Observar el primer pago real en Vercel (buscar `CONFLICTO DE FECHAS` o `Monto distinto` en los registros)
+- [ ] Replicar el protocolo en las demás apps, sitios y landings (ProduccionApp, FurgonApp, ProspeccionApp, CargaBox, Ecomoving): empezar siempre con la revisión de secretos en GitHub y la visibilidad del repo
 
-## Sincronización con Ecomoving (decidir)
-- [ ] Mario: en el SQL Editor de la base de **Ecomoving** ejecutar `DROP TRIGGER IF EXISTS trigger_sync_contacts_to_tiny ON public.contactos;` y `DROP FUNCTION IF EXISTS public.sync_contacts_to_tiny_puertecillo();` (decisión de Mario 2026-10-25: eliminar toda relación Tiny–Ecomoving)
-- [x] Borrar `/api/sync-contacts` y `supabase_webhook_trigger.sql` del sitio (hecho en local, rama `quitar-conexion-ecomoving`; falta commit y publicar)
-- [ ] Mario: quitar `SYNC_SECRET` de las variables de Vercel del sitio y de su `.env.local`
-- [x] Ya no aplica: la llave de Ecomoving sale del código (la revisión de esa base queda para cuando se aborde EcomovingApp)
+## Hecho (2026-10-25)
+**Datos abiertos en Supabase (cerrado)**
+- [x] Línea base de seguridad de Tiny
+- [x] `/marketing` protegido (PR #11, `06dc7b2`) y luego eliminado del sitio (PR #12, `b26b67b`); la app real es `app.tinypuertecillo.cl`
+- [x] SQL `supabase_cerrar_acceso_publico.sql` ejecutado por Mario: con la llave pública las 9 tablas dan 401; la llave de servicio sigue leyendo todo
+- [x] Mario confirmó que `app.tinypuertecillo.cl` sigue cargando los contactos
+- [x] Llave de servicio de `.env.local` renovada (`sb_secret_`)
 
-## Revisión de secretos en GitHub
-- [x] Tiny (2026-10-25): sin `.env` en el historial; 1 llave pública de Ecomoving en el código (ver arriba); sin llaves secretas
-- [ ] Replicar en cada proyecto al abordarlo (CargaBoxApp, CargaBoxSitio, ecomoving-site, EcomovingApp, ProduccionApp, PubliboxApp, FurgonApp, ProspeccionApp, landings y sitios)
+**Código del sitio**
+- [x] Contraseña de admin por defecto eliminada; la llave de servicio ya no cae a la pública
+- [x] `/api/send-test` y `/api/cron` eliminados junto con `/marketing`
+- [x] Pago Flow: sin bloqueos duplicados, con revisión de monto y de fechas (PR #13, `38120c1`). Probado con Flow sandbox: aviso repetido, monto distinto y conflicto OK. No probado: rechazo tardío
+- [x] Login de admin: máximo 5 fallos por IP en 15 min
+- [x] Cabeceras de seguridad (`X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, CSP mínima)
+- [x] Llaves de Flow sandbox en `.env.local`, verificadas
 
-## Después
-- [ ] Replicar el protocolo en ProduccionApp, FurgonApp, ProspeccionApp, sitios y landings
+**Ecomoving**
+- [x] Decisión de Mario: eliminar toda relación Tiny–Ecomoving
+- [x] Mario ejecutó en la base de Ecomoving el `DROP TRIGGER` y `DROP FUNCTION` del aviso a Tiny
+- [x] `/api/sync-contacts` y `supabase_webhook_trigger.sql` eliminados del sitio (PR #14, `4b45cc1`)
+
+**Respaldos**
+- [x] Decisión de Mario: respaldos periódicos gratis, sin plan Pro
+- [x] Repo privado `tinypuertecillo/respaldos-bd`: respaldo semanal cifrado (lunes 07:00 UTC, 90 días)
+- [x] Secretos puestos por Mario y primer respaldo real exitoso: 14 tablas, artefacto `respaldo-2026-10-25`
+- [x] Recordatorio mensual (día 1, 10:00) que revisa que los respaldos sigan corriendo
+
+**Protocolo y autonomía**
+- [x] Protocolo de pruebas, protocolo de autonomía y skill `revision-proyecto` en Cerebro
+- [x] Revisión de secretos en GitHub (sin `.env` en el historial; 1 llave pública de Ecomoving, ya eliminada del código)
+- [x] Descuentos vigentes confirmados por Mario: 17 % por 2 noches y 20 % por 3 o más
+
+## Resumen
+Hechos: 21 · Pendientes de Mario: 8 · Pendientes de Claude: 10
