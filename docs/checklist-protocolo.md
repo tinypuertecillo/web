@@ -21,13 +21,13 @@ Actualizado: 2026-10-25. Protocolo completo: `_cerebro/recursos-compartidos/prot
 - [x] Quitar la contraseña de admin por defecto del código (hecho en local; `ADMIN_PASSWORD` sí existe en Vercel, así que es seguro publicarlo)
 - [x] Proteger `/api/send-test` con la sesión de admin (hecho en local; la página /marketing la usa, por eso no se borra). Nota: el sitio no tiene `BREVO_API_KEY` en Vercel, así que esa ruta hoy no envía nada en producción
 - [ ] `/api/sync-contacts`: exigir `SYNC_SECRET` y sacar la clave de Ecomoving del código
-- [x] Pago Flow: no duplicar bloqueos, revisar monto y fechas (hecho en local, rama `mejorar-pago-login-cabeceras`; **probar con Flow sandbox**)
+- [x] Pago Flow: no duplicar bloqueos, revisar monto y fechas (PR #13 mergeado y publicado el 2026-10-25, commit `38120c1`; probado con Flow sandbox: aviso repetido, monto distinto y conflicto OK; falta observar el primer pago real)
 - [x] Límite de intentos en el login de admin (hecho en local; 5 fallos por IP en 15 min)
 - [x] Avisar si falta la llave de servicio (hecho en local; Vercel sí tiene `SUPABASE_SERVICE_ROLE_KEY`)
 - [x] Cabeceras de seguridad (hecho en local; falta una CSP con `script-src`, que se prueba aparte)
 
 ## Pendiente de Mario
-- [ ] Llaves de Flow sandbox en `.env.local` (`FLOW_API_KEY`, `FLOW_SECRET_KEY`)
+- [x] Llaves de Flow sandbox en `.env.local` (puestas por Mario, verificadas 2026-10-25)
 - [ ] `ADMIN_PASSWORD` en Vercel ya existe; cambiarla solo si alguna vez se compartió
 - [ ] Confirmar que producción usa `FLOW_API_URL` real (la variable existe en Vercel; Mario mira el valor en el panel, yo no lo leo)
 - [x] `send-test`: se protegió con sesión de admin (la página /marketing la usa)
@@ -47,9 +47,10 @@ Actualizado: 2026-10-25. Protocolo completo: `_cerebro/recursos-compartidos/prot
 - [ ] Nivel 4: lista antes de entregar, anotada en la ficha
 
 ## Sincronización con Ecomoving (decidir)
-- [ ] Mario: confirmar si el trigger `sync_contacts_to_tiny_puertecillo` sigue activo en la base de Ecomoving (solo mirar)
-- [ ] Borrar `/api/sync-contacts`, sacar la llave de Ecomoving del código y quitar `SYNC_SECRET` de Vercel (si la carga fue única)
-- [ ] Revisar si la base de Ecomoving responde a la llave pública (misma prueba de solo conteo)
+- [ ] Mario: en el SQL Editor de la base de **Ecomoving** ejecutar `DROP TRIGGER IF EXISTS trigger_sync_contacts_to_tiny ON public.contactos;` y `DROP FUNCTION IF EXISTS public.sync_contacts_to_tiny_puertecillo();` (decisión de Mario 2026-10-25: eliminar toda relación Tiny–Ecomoving)
+- [x] Borrar `/api/sync-contacts` y `supabase_webhook_trigger.sql` del sitio (hecho en local, rama `quitar-conexion-ecomoving`; falta commit y publicar)
+- [ ] Mario: quitar `SYNC_SECRET` de las variables de Vercel del sitio y de su `.env.local`
+- [x] Ya no aplica: la llave de Ecomoving sale del código (la revisión de esa base queda para cuando se aborde EcomovingApp)
 
 ## Revisión de secretos en GitHub
 - [x] Tiny (2026-10-25): sin `.env` en el historial; 1 llave pública de Ecomoving en el código (ver arriba); sin llaves secretas
