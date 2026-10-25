@@ -1,10 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl || !serviceKey) {
-  throw new Error("Faltan variables de entorno de Supabase (service role)");
+  throw new Error("Faltan variables de entorno de Supabase (SUPABASE_SERVICE_ROLE_KEY)");
 }
 
 // Cliente server-side con la service role key: se usa SOLO en rutas de API

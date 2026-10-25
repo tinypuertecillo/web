@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { supabase } from "../../lib/supabase";
 import {
     Mail,
     Eye,
@@ -40,13 +39,14 @@ export default function ListaContenidos() {
     const cargarMensajes = async () => {
         try {
             setCargando(true);
-            const { data, error: dbError } = await supabase
-                .from("marketing")
-                .select("*")
-                .order("nombre_envio", { ascending: true });
-
-            if (dbError) throw dbError;
-            setMensajes(data || []);
+            const res = await fetch("/api/admin/marketing?recurso=mensajes");
+            if (res.status === 401) {
+                setError("Inicia sesión en /admin para ver la biblioteca de contenidos.");
+                return;
+            }
+            if (!res.ok) throw new Error("No se pudo leer la biblioteca");
+            const data = await res.json();
+            setMensajes(data.mensajes || []);
         } catch (err: any) {
             console.error("Error cargando mensajes:", err);
             setError("No se pudo cargar la biblioteca de contenidos.");
@@ -90,12 +90,15 @@ export default function ListaContenidos() {
 
     const guardarUrl = async (id: string) => {
         try {
-            const { error: dbError } = await supabase
-                .from("marketing")
-                .update({ imagen_url: urlTemporal })
-                .eq("id", id);
-
-            if (dbError) throw dbError;
+            const res = await fetch("/api/admin/marketing", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ recurso: "mensajes", id, imagen_url: urlTemporal }),
+            });
+            if (!res.ok) {
+                const cuerpo = await res.json().catch(() => ({}));
+                throw new Error(cuerpo.error || "No se pudo guardar la URL.");
+            }
 
             setMensajes(mensajes.map(m =>
                 m.id === id ? { ...m, imagen_url: urlTemporal } : m
