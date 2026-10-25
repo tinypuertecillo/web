@@ -12,8 +12,8 @@ Actualizado: 2026-10-25. Protocolo completo: `_cerebro/recursos-compartidos/prot
 - [x] Mario revisó `/marketing` en local; commit `94431bb` y push a la rama `proteger-datos-marketing` (2026-10-25)
 - [x] PR #11 mergeado y publicado en producción (commit `06dc7b2`, 2026-10-25); sin sesión todo da 401 como se espera
 - [x] Mario probó en producción: con sesión de admin `/marketing` mostró los 1107 contactos; en ventana privada, sin sesión, no muestra nada (la protección funciona)
-- [x] Decisión de Mario: eliminar la página `/marketing` (hecho en local en la rama `eliminar-pagina-marketing`; falta commit, push y publicar)
-- [ ] Ejecutar `supabase_cerrar_acceso_publico.sql` en Supabase (Mario o con su visto bueno) y repetir la prueba de lectura con la llave pública (debe dar 0 filas o error)
+- [x] Decisión de Mario: eliminar la página `/marketing` (hecho en local en la rama `eliminar-pagina-marketing`; PR #12 mergeado y publicado, commit `b26b67b`; rutas borradas dan 404 y el sitio sigue bien)
+- [x] SQL `supabase_cerrar_acceso_publico.sql` ejecutado por Mario (2026-10-25); prueba con la llave pública: 9 tablas dan 401; la llave de servicio sigue leyendo todo
 - [ ] Después del SQL: Mario abre `app.tinypuertecillo.cl` y confirma que los contactos cargan (la app usa solo la llave de servicio en su servidor)
 - [ ] Decidir respaldos: exportación manual periódica o plan Pro (Mario)
 
@@ -21,10 +21,10 @@ Actualizado: 2026-10-25. Protocolo completo: `_cerebro/recursos-compartidos/prot
 - [x] Quitar la contraseña de admin por defecto del código (hecho en local; `ADMIN_PASSWORD` sí existe en Vercel, así que es seguro publicarlo)
 - [x] Proteger `/api/send-test` con la sesión de admin (hecho en local; la página /marketing la usa, por eso no se borra). Nota: el sitio no tiene `BREVO_API_KEY` en Vercel, así que esa ruta hoy no envía nada en producción
 - [ ] `/api/sync-contacts`: exigir `SYNC_SECRET` y sacar la clave de Ecomoving del código
-- [ ] Pago Flow: no duplicar bloqueos y revisar que las fechas sigan libres
-- [ ] Límite de intentos en el login de admin
+- [x] Pago Flow: no duplicar bloqueos, revisar monto y fechas (hecho en local, rama `mejorar-pago-login-cabeceras`; **probar con Flow sandbox**)
+- [x] Límite de intentos en el login de admin (hecho en local; 5 fallos por IP en 15 min)
 - [x] Avisar si falta la llave de servicio (hecho en local; Vercel sí tiene `SUPABASE_SERVICE_ROLE_KEY`)
-- [ ] Cabeceras de seguridad
+- [x] Cabeceras de seguridad (hecho en local; falta una CSP con `script-src`, que se prueba aparte)
 
 ## Pendiente de Mario
 - [ ] Llaves de Flow sandbox en `.env.local` (`FLOW_API_KEY`, `FLOW_SECRET_KEY`)
