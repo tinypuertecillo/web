@@ -9,11 +9,12 @@ Actualizado: 2026-10-25. Protocolo completo: `_cerebro/recursos-compartidos/prot
 ## URGENTE: datos abiertos en Supabase
 - [x] Mover la página `/marketing` a `/api/admin/marketing` protegida (hecho en local 2026-10-25, sin commit; probado: sin sesión 401, validaciones 400; lectura probada en local con la llave nueva: contactos 1107, mensajes 8, trazabilidad 100; sin sesión 401)
 - [x] Mario: actualizar `SUPABASE_SERVICE_ROLE_KEY` en `.env.local` (hecho 2026-10-25, llave `sb_secret_` nueva, funciona)
-- [ ] Mario: revisar `/marketing` en local y dar el visto bueno → commit y push
-- [ ] Publicar el sitio y **verificar `/marketing` en producción ANTES de ejecutar el SQL**
+- [x] Mario revisó `/marketing` en local; commit `94431bb` y push a la rama `proteger-datos-marketing` (2026-10-25)
+- [x] PR #11 mergeado y publicado en producción (commit `06dc7b2`, 2026-10-25); sin sesión todo da 401 como se espera
+- [x] Mario probó en producción: con sesión de admin `/marketing` mostró los 1107 contactos; en ventana privada, sin sesión, no muestra nada (la protección funciona)
+- [x] Decisión de Mario: eliminar la página `/marketing` (hecho en local en la rama `eliminar-pagina-marketing`; falta commit, push y publicar)
 - [ ] Ejecutar `supabase_cerrar_acceso_publico.sql` en Supabase (Mario o con su visto bueno) y repetir la prueba de lectura con la llave pública (debe dar 0 filas o error)
-- [ ] Quitar las políticas "Permitir todo" de `contactos`, `marketing` y `trazabilidad_correos` (Claude prepara el SQL; **Mario aprueba y se ejecuta**)
-- [ ] Verificar que `tiny-puertecillo-app` sigue funcionando (llave de servicio)
+- [ ] Después del SQL: Mario abre `app.tinypuertecillo.cl` y confirma que los contactos cargan (la app usa solo la llave de servicio en su servidor)
 - [ ] Decidir respaldos: exportación manual periódica o plan Pro (Mario)
 
 ## Corregir hallazgos de Tiny (en local, sin commit hasta que Mario revise)
@@ -29,7 +30,7 @@ Actualizado: 2026-10-25. Protocolo completo: `_cerebro/recursos-compartidos/prot
 - [ ] Llaves de Flow sandbox en `.env.local` (`FLOW_API_KEY`, `FLOW_SECRET_KEY`)
 - [ ] `ADMIN_PASSWORD` en Vercel ya existe; cambiarla solo si alguna vez se compartió
 - [ ] Confirmar que producción usa `FLOW_API_URL` real (la variable existe en Vercel; Mario mira el valor en el panel, yo no lo leo)
-- [ ] Decidir `send-test`: borrar (recomendado) o proteger
+- [x] `send-test`: se protegió con sesión de admin (la página /marketing la usa)
 - [ ] Cuentas de UptimeRobot y Sentry, y correo de avisos
 
 ## Habilitar autonomía (Mario, una vez; detalle en `protocolo-autonomia.md`)
@@ -44,6 +45,15 @@ Actualizado: 2026-10-25. Protocolo completo: `_cerebro/recursos-compartidos/prot
 - [ ] Nivel 3: revisión semanal (ZAP, Lighthouse, cabeceras)
 - [ ] Nivel 5: UptimeRobot y Sentry
 - [ ] Nivel 4: lista antes de entregar, anotada en la ficha
+
+## Sincronización con Ecomoving (decidir)
+- [ ] Mario: confirmar si el trigger `sync_contacts_to_tiny_puertecillo` sigue activo en la base de Ecomoving (solo mirar)
+- [ ] Borrar `/api/sync-contacts`, sacar la llave de Ecomoving del código y quitar `SYNC_SECRET` de Vercel (si la carga fue única)
+- [ ] Revisar si la base de Ecomoving responde a la llave pública (misma prueba de solo conteo)
+
+## Revisión de secretos en GitHub
+- [x] Tiny (2026-10-25): sin `.env` en el historial; 1 llave pública de Ecomoving en el código (ver arriba); sin llaves secretas
+- [ ] Replicar en cada proyecto al abordarlo (CargaBoxApp, CargaBoxSitio, ecomoving-site, EcomovingApp, ProduccionApp, PubliboxApp, FurgonApp, ProspeccionApp, landings y sitios)
 
 ## Después
 - [ ] Replicar el protocolo en ProduccionApp, FurgonApp, ProspeccionApp, sitios y landings
