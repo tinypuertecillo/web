@@ -442,7 +442,7 @@ export default function ReservarPage() {
                   </div>
                 </div>
               ))}
-              <div className="text-[11px] text-[#8a8a8a]">Máximo {cap.maxHuespedes} huéspedes (adultos y niños; hasta {cap.maxAdultos} adultos y {cap.maxNinos} {cap.maxNinos === 1 ? 'niño' : 'niños'}); bebés hasta {cap.maxBebes}, no cuentan en el total.</div>
+              <div className="text-[11px] text-[#8a8a8a]">Máximo {cap.maxHuespedes} huéspedes (adultos y niños; hasta {cap.maxAdultos} adultos y {cap.maxNinos} {cap.maxNinos === 1 ? 'niño' : 'niños'}).</div>
             </div>
 
             <div className="h-px bg-[#eee7da]" />
