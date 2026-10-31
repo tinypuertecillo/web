@@ -93,7 +93,7 @@ export function leerExtras(row: Record<string, unknown> | null | undefined): Ext
   return extras;
 }
 
-export const CAPACIDAD_POR_DEFECTO: Capacidad = { maxHuespedes: 4, maxAdultos: 4, maxNinos: 3, maxBebes: 10, maxMascotas: 1 };
+export const CAPACIDAD_POR_DEFECTO: Capacidad = { maxHuespedes: 4, maxAdultos: 3, maxNinos: 1, maxBebes: 10, maxMascotas: 1 };
 
 // Capacidad por cabaña (columnas max_huespedes, max_adultos, max_ninos, max_bebes y max_mascotas de precios_cabana).
 export async function getCapacidades(): Promise<Record<"naciente" | "poniente", Capacidad>> {

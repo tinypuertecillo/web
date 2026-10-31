@@ -57,8 +57,8 @@ const CAP_CAMPOS: { campo: keyof CapCampos; label: string; min: number }[] = [
 export default function HuespedesAdmin({ precioBase, hayDescuentos }: { precioBase: number | null; hayDescuentos: boolean }) {
   const [extras, setExtras] = useState<ExtrasForm>(aForm(EXTRAS_POR_DEFECTO));
   const [cap, setCap] = useState<CapForm>({
-    naciente: { maxHuespedes: '4', maxAdultos: '4', maxNinos: '3', maxBebes: '10', maxMascotas: '1' },
-    poniente: { maxHuespedes: '4', maxAdultos: '4', maxNinos: '3', maxBebes: '10', maxMascotas: '1' },
+    naciente: { maxHuespedes: '4', maxAdultos: '3', maxNinos: '1', maxBebes: '10', maxMascotas: '1' },
+    poniente: { maxHuespedes: '4', maxAdultos: '3', maxNinos: '1', maxBebes: '10', maxMascotas: '1' },
   });
   const [msg, setMsg] = useState<Msg>(null);
   const [guardando, setGuardando] = useState(false);
