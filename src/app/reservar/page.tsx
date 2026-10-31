@@ -29,8 +29,8 @@ const EXTRA_LABEL: Record<string, string> = {
 };
 
 const CAPACIDAD_INICIAL: Record<Cabin, Capacidad> = {
-  naciente: { maxHuespedes: 4, maxAdultos: 4, maxNinos: 3, maxBebes: 10, maxMascotas: 1 },
-  poniente: { maxHuespedes: 4, maxAdultos: 4, maxNinos: 3, maxBebes: 10, maxMascotas: 1 },
+  naciente: { maxHuespedes: 4, maxAdultos: 3, maxNinos: 1, maxBebes: 10, maxMascotas: 1 },
+  poniente: { maxHuespedes: 4, maxAdultos: 3, maxNinos: 1, maxBebes: 10, maxMascotas: 1 },
 };
 
 type BloqueoApi = { cabana_id: Cabin; fecha_inicio: string; fecha_fin: string };
