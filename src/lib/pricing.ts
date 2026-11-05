@@ -114,8 +114,9 @@ export async function getCapacidades(): Promise<Record<"naciente" | "poniente", 
   return res;
 }
 
-export async function calcularPrecio(fechaInicio: string, fechaFin: string, huespedes?: Huespedes): Promise<ResultadoPrecio> {
+// codigoPct: porcentaje de un código de descuento ya validado en el servidor (ver src/lib/codigos.ts).
+export async function calcularPrecio(fechaInicio: string, fechaFin: string, huespedes?: Huespedes, codigoPct: number = 0): Promise<ResultadoPrecio> {
   const { precioBase, ...resto } = await getConfigPrecios();
   if (precioBase === null) throw new PrecioNoConfiguradoError();
-  return calcularPrecioConConfig(fechaInicio, fechaFin, { ...resto, precioBase }, huespedes);
+  return calcularPrecioConConfig(fechaInicio, fechaFin, { ...resto, precioBase }, huespedes, codigoPct);
 }

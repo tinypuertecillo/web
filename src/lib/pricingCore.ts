@@ -63,6 +63,8 @@ export type ResultadoPrecio = {
   descuento: number;
   total: number;
   desglose: NochePrecio[];
+  // De dónde viene el descuento aplicado: de las noches de la estadía o de un código de descuento (null = sin descuento).
+  descuentoOrigen?: "noches" | "codigo" | null;
 };
 
 // Valida y ordena las reglas de descuento. Devuelve un texto de error si alguna no es válida.
@@ -157,11 +159,14 @@ export function extraPorUnidad(extra: ExtraHuesped, precioNoche: number): number
 // El precio de la noche es el de 1 adulto; cada adulto adicional, niño, bebé y mascota
 // suma su extra por noche (% del precio de esa noche o monto fijo). El descuento
 // depende de las noches de la estadía y se aplica al final sobre todo el subtotal.
+// codigoPct = porcentaje de un código de descuento ya validado (0 = sin código). El código NO se suma
+// al descuento por noches: se aplica el mayor de los dos.
 export function calcularPrecioConConfig(
   fechaInicio: string,
   fechaFin: string,
   config: ConfigPrecios,
-  huespedes: Huespedes = HUESPEDES_POR_DEFECTO
+  huespedes: Huespedes = HUESPEDES_POR_DEFECTO,
+  codigoPct: number = 0
 ): ResultadoPrecio {
   const extras = config.extras ?? EXTRAS_POR_DEFECTO;
   const cantidades: Record<TipoHuesped, number> = {
@@ -187,7 +192,10 @@ export function calcularPrecioConConfig(
   const subtotalNoches = desglose.reduce((acc, n) => acc + n.precio, 0);
   const extrasTotal = desglose.reduce((acc, n) => acc + (n.extras ?? 0), 0);
   const subtotal = subtotalNoches + extrasTotal;
-  const descuentoPct = descuentoParaNoches(desglose.length, config.descuentos);
+  const pctNoches = descuentoParaNoches(desglose.length, config.descuentos);
+  const pctCodigo = Number.isFinite(codigoPct) && codigoPct > 0 && codigoPct < 100 ? codigoPct : 0;
+  const descuentoPct = Math.max(pctNoches, pctCodigo);
+  const descuentoOrigen: "noches" | "codigo" | null = pctCodigo > pctNoches ? "codigo" : pctNoches > 0 ? "noches" : null;
   const total = Math.round(subtotal * (1 - descuentoPct / 100));
   return {
     noches: desglose.length,
@@ -202,5 +210,6 @@ export function calcularPrecioConConfig(
     descuento: subtotal - total,
     total,
     desglose,
+    descuentoOrigen,
   };
 }

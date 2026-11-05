@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { createFlowPayment } from "@/lib/flow";
 import { calcularPrecio, esFechaValida, getCapacidades, getMinNoches, PrecioNoConfiguradoError } from "@/lib/pricing";
 import { HUESPEDES_POR_DEFECTO, validarHuespedes } from "@/lib/pricingCore";
+import { normalizarCodigo, validarCodigoConLimite } from "@/lib/codigos";
 
 export const dynamic = "force-dynamic";
 
@@ -14,9 +15,10 @@ const CABIN_LABEL: Record<string, string> = {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { cabanaId, fechaInicio, fechaFin, nombre, email, telefono, huespedes } = body as {
+    const { cabanaId, fechaInicio, fechaFin, nombre, email, telefono, huespedes, codigo } = body as {
       cabanaId: string;
       huespedes?: unknown;
+      codigo?: string;
       fechaInicio: string;
       fechaFin: string;
       nombre: string;
@@ -50,8 +52,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `La estadía mínima es de ${minNoches} ${minNoches === 1 ? "noche" : "noches"}` }, { status: 400 });
     }
 
+    // Código de descuento (opcional): se valida aquí, nunca se confía en el porcentaje que mande el navegador
+    let codigoPct = 0;
+    let codigoTexto = "";
+    if (normalizarCodigo(codigo)) {
+      const res = await validarCodigoConLimite(req, codigo);
+      if (!res.ok) return NextResponse.json({ error: res.error }, { status: res.status });
+      codigoPct = res.codigo.porcentaje;
+      codigoTexto = res.codigo.codigo;
+    }
+
     // Precio calculado en el servidor (noches con tarifas variables, adicionales por persona y descuento)
-    const { noches, total: precioTotal } = await calcularPrecio(fechaInicio, fechaFin, guests);
+    const { noches, total: precioTotal, descuentoOrigen } = await calcularPrecio(fechaInicio, fechaFin, guests, codigoPct);
+    // El código solo queda registrado (y se gasta al pagar) si de verdad se aplicó: no se suma al descuento por noches
+    const codigoAplicado = descuentoOrigen === "codigo" ? codigoTexto : "";
 
     // Verificar que las fechas no se traslapen con un bloqueo existente
     const { data: choques } = await supabaseAdmin
@@ -76,11 +90,22 @@ export async function POST(req: NextRequest) {
       huesped_telefono: telefono || null,
       estado: "pendiente",
     };
-    const conHuespedes = { ...filaReserva, adultos: guests.adultos, ninos: guests.ninos, bebes: guests.bebes, mascotas: guests.mascotas };
+    const conHuespedes = {
+      ...filaReserva,
+      adultos: guests.adultos,
+      ninos: guests.ninos,
+      bebes: guests.bebes,
+      mascotas: guests.mascotas,
+      ...(codigoAplicado ? { codigo_descuento: codigoAplicado } : {}),
+    };
 
     let { data: reserva, error: insertError } = await supabaseAdmin.from("reservas").insert(conHuespedes).select().single();
-    // Si las columnas de huéspedes todavía no existen en la tabla, se reserva igual sin ellas
+    // Si las columnas nuevas todavía no existen en la tabla, se reserva igual sin ellas, salvo que haya un código:
+    // un descuento por código nunca se da sin dejarlo registrado.
     if (insertError?.code === "PGRST204") {
+      if (codigoAplicado) {
+        return NextResponse.json({ error: "Los códigos de descuento no están disponibles por ahora." }, { status: 503 });
+      }
       ({ data: reserva, error: insertError } = await supabaseAdmin.from("reservas").insert(filaReserva).select().single());
     }
 
