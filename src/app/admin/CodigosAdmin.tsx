@@ -152,18 +152,17 @@ export default function CodigosAdmin({ visible }: { visible: boolean }) {
     cargar();
   }
 
-  async function cambiarActivo(c: Codigo) {
+  async function eliminar(c: Codigo) {
+    if (!confirm(`¿Eliminar el código ${c.codigo}${c.celular ? ` (${fmtCelular(c.celular)})` : ''}? No se puede deshacer.`)) return;
     setAviso(null);
-    const res = await fetch('/api/admin/codigos', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: c.id, activo: !c.activo }),
-    });
+    const res = await fetch(`/api/admin/codigos?id=${encodeURIComponent(c.id)}`, { method: 'DELETE' });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      setAviso({ ok: false, text: data.error || 'No se pudo cambiar el estado' });
+      setAviso({ ok: false, text: data.error || 'No se pudo eliminar el código' });
       return;
     }
+    if (nuevo?.id === c.id) setNuevo(null);
+    setAviso({ ok: true, text: `Código ${c.codigo} eliminado` });
     cargar();
   }
 
@@ -238,7 +237,7 @@ export default function CodigosAdmin({ visible }: { visible: boolean }) {
         {cargado && codigos.length === 0 && <div className="text-sm text-[#8a8a8a]">Todavía no hay códigos.</div>}
         {codigos.length > 0 && (
           <div className="overflow-x-auto max-h-[640px] overflow-y-auto">
-            <table className="w-full text-sm min-w-[640px]">
+            <table className="w-full text-sm min-w-[560px]">
               <thead>
                 <tr className="text-left text-[10px] uppercase tracking-wide text-secondary">
                   <th className="font-bold pb-2 pr-3">Pedido</th>
@@ -266,13 +265,13 @@ export default function CodigosAdmin({ visible }: { visible: boolean }) {
                       <td className="py-2.5 pr-3 whitespace-nowrap">{fmtFecha(c.valido_hasta)}</td>
                       <td className="py-2.5 pr-3"><span className={`text-[10px] font-bold uppercase tracking-wide rounded-full px-2.5 py-1 ${est.clase}`}>{est.texto}</span></td>
                       <td className="py-2.5">
-                        <div className="flex gap-3 flex-wrap">
+                        <div className="flex flex-col items-start gap-1">
                           {wa && <a href={wa} target="_blank" rel="noopener noreferrer" className="text-xs underline font-semibold text-[#163428]">WhatsApp</a>}
                           <button type="button" onClick={() => copiar(mensajeDe(c), 'l' + c.id)} className="text-xs underline font-semibold text-[#163428]">
-                            {copiado === 'l' + c.id ? 'Copiado' : 'Copiar'}
+                            {copiado === 'l' + c.id ? 'Copiado' : 'Copiar mensaje'}
                           </button>
-                          <button type="button" onClick={() => cambiarActivo(c)} className="text-xs underline font-semibold text-[#3a3a3a]">
-                            {c.activo ? 'Desactivar' : 'Activar'}
+                          <button type="button" onClick={() => eliminar(c)} className="text-xs underline font-semibold text-red-600">
+                            Eliminar
                           </button>
                         </div>
                       </td>
