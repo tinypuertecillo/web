@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 
@@ -36,6 +37,8 @@ const CAPACIDAD_INICIAL: Record<Cabin, Capacidad> = {
 
 type BloqueoApi = { cabana_id: Cabin; fecha_inicio: string; fecha_fin: string };
 
+const CABINS: Cabin[] = ['naciente', 'poniente'];
+
 const CABIN_LABEL: Record<Cabin, string> = {
   naciente: 'Tiny House Naciente',
   poniente: 'Tiny House Poniente',
@@ -47,6 +50,8 @@ const MONTHS = [
 ];
 
 const WEEKDAY_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+
+const CARD = 'bg-white rounded-2xl p-6 md:p-7 shadow-[0_20px_40px_rgba(29,27,22,0.05)] flex flex-col gap-4';
 
 function keyOf(cell: DateCell) {
   return cell.m * 100 + cell.d;
@@ -65,10 +70,14 @@ function monthShort(m: number) {
 }
 
 export default function ReservarPage() {
+  // La reserva pertenece a la Tiny cuyo calendario se está usando; cada Tiny tiene su propio calendario.
   const [cabin, setCabin] = useState<Cabin>('naciente');
   const [checkIn, setCheckIn] = useState<DateCell | null>(null);
   const [checkOut, setCheckOut] = useState<DateCell | null>(null);
   const [hover, setHover] = useState<DateCell | null>(null);
+  const [hoverCabin, setHoverCabin] = useState<Cabin | null>(null);
+  // Mes que muestra cada calendario (índice en MONTHS); por defecto noviembre
+  const [mesVista, setMesVista] = useState<Record<Cabin, number>>({ naciente: 1, poniente: 1 });
   const [guestName, setGuestName] = useState('');
   const [guestEmail, setGuestEmail] = useState('');
   const [guestPhone, setGuestPhone] = useState('');
@@ -124,7 +133,8 @@ export default function ReservarPage() {
     };
   }, []);
 
-  const isBlocked = (m: number, d: number) => (blocked[cabin][m] || []).includes(d);
+  const isBlockedIn = (c: Cabin, m: number, d: number) => (blocked[c][m] || []).includes(d);
+  const isBlocked = (m: number, d: number) => isBlockedIn(cabin, m, d);
 
   const hasBlockedBetween = (a: DateCell, b: DateCell) => {
     let cur: DateCell = { m: a.m, d: a.d + 1 };
@@ -140,9 +150,32 @@ export default function ReservarPage() {
     return false;
   };
 
-  const pickDay = (m: number, d: number) => {
-    if (isBlocked(m, d)) return;
+  // Al usar el calendario de la otra Tiny, la reserva pasa a esa Tiny y se limpian las fechas anteriores
+  const cambiarCabana = (c: Cabin) => {
+    setCabin(c);
+    setCheckIn(null);
+    setCheckOut(null);
+    setHover(null);
+    const cp = capacidad[c];
+    setGuests((g) => {
+      const adultos = Math.min(g.adultos, cp.maxAdultos, cp.maxHuespedes);
+      return {
+        adultos,
+        ninos: Math.min(g.ninos, cp.maxNinos, cp.maxHuespedes - adultos),
+        bebes: Math.min(g.bebes, cp.maxBebes),
+        mascotas: Math.min(g.mascotas, cp.maxMascotas),
+      };
+    });
+  };
+
+  const pickDay = (c: Cabin, m: number, d: number) => {
+    if (isBlockedIn(c, m, d)) return;
     const cell = { m, d };
+    if (c !== cabin) {
+      cambiarCabana(c);
+      setCheckIn(cell);
+      return;
+    }
     if (!checkIn || checkOut) {
       setCheckIn(cell);
       setCheckOut(null);
@@ -254,12 +287,6 @@ export default function ReservarPage() {
   const cotizacion = quote && quote.key === quoteKey ? quote.data : null;
   const total = cotizacion?.total ?? 0;
 
-  const rangeHeadline = checkIn && checkOut
-    ? `${checkIn.d} ${monthShort(checkIn.m)} – ${checkOut.d} ${monthShort(checkOut.m)}`
-    : checkIn
-      ? `${checkIn.d} ${monthShort(checkIn.m)} – elige salida`
-      : 'Selecciona tus fechas';
-
   const canSubmit = !!(checkIn && checkOut && nights >= minNoches && cotizacion && guestName && guestEmail && !submitting);
 
   async function handlePagar() {
@@ -296,7 +323,13 @@ export default function ReservarPage() {
     }
   }
 
-  function buildMonthDays(month: typeof MONTHS[number]) {
+  function buildMonthDays(c: Cabin, month: typeof MONTHS[number]) {
+    // Solo el calendario de la Tiny elegida muestra la selección y la vista previa del rango
+    const activa = c === cabin;
+    const ci = activa ? checkIn : null;
+    const co = activa ? checkOut : null;
+    const hv = activa && hoverCabin === c ? hover : null;
+
     const cells: Array<{
       key: string;
       label: string;
@@ -311,7 +344,7 @@ export default function ReservarPage() {
 
     for (let i = 0; i < month.startWeekday; i++) {
       cells.push({
-        key: `blank-${month.m}-${i}`,
+        key: `blank-${c}-${month.m}-${i}`,
         label: '',
         disabled: true,
         blank: true,
@@ -323,26 +356,26 @@ export default function ReservarPage() {
       });
     }
 
-    const effectiveEnd = checkOut || hover;
+    const effectiveEnd = co || hv;
 
     for (let d = 1; d <= month.days; d++) {
       const cell = { m: month.m, d };
-      const blockedDay = isBlocked(month.m, d);
-      const isStart = !!checkIn && keyOf(cell) === keyOf(checkIn);
-      const isEnd = !!checkOut && keyOf(cell) === keyOf(checkOut);
-      const previewEnd = !checkOut && !!hover && !!checkIn && keyOf(hover) > keyOf(checkIn);
-      const isHoverEnd = previewEnd && keyOf(cell) === keyOf(hover as DateCell);
+      const blockedDay = isBlockedIn(c, month.m, d);
+      const isStart = !!ci && keyOf(cell) === keyOf(ci);
+      const isEnd = !!co && keyOf(cell) === keyOf(co);
+      const previewEnd = !co && !!hv && !!ci && keyOf(hv) > keyOf(ci);
+      const isHoverEnd = previewEnd && keyOf(cell) === keyOf(hv as DateCell);
       let inRange = false;
-      if (checkIn && effectiveEnd && keyOf(effectiveEnd) > keyOf(checkIn)) {
-        inRange = keyOf(cell) > keyOf(checkIn) && keyOf(cell) < keyOf(effectiveEnd);
+      if (ci && effectiveEnd && keyOf(effectiveEnd) > keyOf(ci)) {
+        inRange = keyOf(cell) > keyOf(ci) && keyOf(cell) < keyOf(effectiveEnd);
       }
       const isSelectedEdge = isStart || isEnd || isHoverEnd;
 
       let wrapBg = '';
       if (inRange) wrapBg = 'bg-[#f3ede4]';
-      if (isStart && (checkOut || previewEnd)) wrapBg = 'bg-gradient-to-r from-transparent from-50% to-[#f3ede4] to-50%';
+      if (isStart && (co || previewEnd)) wrapBg = 'bg-gradient-to-r from-transparent from-50% to-[#f3ede4] to-50%';
       if (isEnd || isHoverEnd) wrapBg = 'bg-gradient-to-r from-[#f3ede4] from-50% to-transparent to-50%';
-      if (isStart && !checkOut && !previewEnd) wrapBg = '';
+      if (isStart && !co && !previewEnd) wrapBg = '';
 
       let numClass = 'w-9 h-9 rounded-full flex items-center justify-center text-sm ';
       if (blockedDay) {
@@ -354,12 +387,17 @@ export default function ReservarPage() {
       }
 
       cells.push({
-        key: `${month.m}-${d}`,
+        key: `${c}-${month.m}-${d}`,
         label: String(d),
         disabled: blockedDay,
         blank: false,
-        onClick: () => pickDay(month.m, d),
-        onMouseEnter: () => !blockedDay && setHover(cell),
+        onClick: () => pickDay(c, month.m, d),
+        onMouseEnter: () => {
+          if (!blockedDay) {
+            setHover(cell);
+            setHoverCabin(c);
+          }
+        },
         onMouseLeave: () => setHover(null),
         wrapClass: `h-10 flex items-center justify-center ${wrapBg} ${blockedDay ? 'cursor-not-allowed' : 'cursor-pointer'}`,
         numClass,
@@ -369,103 +407,99 @@ export default function ReservarPage() {
     return cells;
   }
 
+  // Un calendario completo e independiente para cada Tiny
+  function renderCalendario(c: Cabin) {
+    const activa = c === cabin;
+    const idx = mesVista[c];
+    const month = MONTHS[idx];
+    const estado = activa && checkIn && checkOut ? `${nights} noches en ${CABIN_LABEL[c]}` : activa && checkIn ? 'Elige tu fecha de salida' : 'Elige tu fecha de llegada';
+    return (
+      <section aria-label={`Calendario de ${CABIN_LABEL[c]}`} className={`${CARD} ${activa && checkIn ? 'ring-2 ring-[#163428]' : ''}`}>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h2 className="font-serif text-xl text-[#001f14]">{CABIN_LABEL[c]}</h2>
+          {activa && (checkIn || checkOut) && (
+            <button
+              onClick={() => { setCheckIn(null); setCheckOut(null); setHover(null); }}
+              className="text-xs text-[#3a3a3a] underline font-semibold"
+            >
+              Borrar fechas
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between">
+          <button
+            type="button"
+            aria-label="Mes anterior"
+            disabled={idx === 0}
+            onClick={() => setMesVista((v) => ({ ...v, [c]: v[c] - 1 }))}
+            className="w-9 h-9 rounded-full bg-[#eee7da] text-[#001f14] flex items-center justify-center disabled:opacity-40"
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <div className="text-[15px] font-bold text-[#001f14]">{month.label}</div>
+          <button
+            type="button"
+            aria-label="Mes siguiente"
+            disabled={idx === MONTHS.length - 1}
+            onClick={() => setMesVista((v) => ({ ...v, [c]: v[c] + 1 }))}
+            className="w-9 h-9 rounded-full bg-[#eee7da] text-[#001f14] flex items-center justify-center disabled:opacity-40"
+          >
+            <ChevronRight size={18} />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <div className="grid grid-cols-7">
+            {WEEKDAY_LABELS.map((wd, i) => (
+              <div key={i} className="text-center text-[10px] font-bold text-[#8a8a8a] uppercase tracking-wide pb-1.5">{wd}</div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7">
+            {buildMonthDays(c, month).map((cell) => (
+              <div key={cell.key} className={cell.wrapClass} onClick={cell.onClick} onMouseEnter={cell.onMouseEnter} onMouseLeave={cell.onMouseLeave}>
+                {!cell.blank && <div className={cell.numClass}>{cell.label}</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="text-sm text-[#3a3a3a]">{estado}</div>
+      </section>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-surface text-on-surface font-sans flex flex-col">
       <SiteHeader />
       <div className="max-w-6xl mx-auto px-5 md:px-8 py-14 md:py-20 w-full flex-1">
-        <div className="mb-10">
+        <div className="mb-8">
           <div className="text-xs tracking-[2px] uppercase text-secondary font-semibold mb-2">Tiny Puertecillo</div>
           <h1 className="font-serif text-3xl md:text-4xl text-[#001f14] mb-2">Reserva tu Tiny en Puertecillo</h1>
-          <p className="text-[#3a3a3a] text-sm md:text-base">Elige tu Tiny, tus fechas y paga en línea de forma segura con Flow.</p>
+          <p className="text-[#3a3a3a] text-sm md:text-base">Elige tus fechas en el calendario de la Tiny que prefieras y paga en línea de forma segura con Flow.</p>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-10 items-start">
-          {/* Calendar side */}
-          <div className="flex-[1.5] w-full flex flex-col gap-6">
-            <div className="flex gap-3">
-              {(['naciente', 'poniente'] as Cabin[]).map((c) => (
-                <button
-                  key={c}
-                  onClick={() => {
-                    setCabin(c);
-                    setCheckIn(null);
-                    setCheckOut(null);
-                    const cp = capacidad[c];
-                    setGuests((g) => {
-                      const adultos = Math.min(g.adultos, cp.maxAdultos, cp.maxHuespedes);
-                      return {
-                        adultos,
-                        ninos: Math.min(g.ninos, cp.maxNinos, cp.maxHuespedes - adultos),
-                        bebes: Math.min(g.bebes, cp.maxBebes),
-                        mascotas: Math.min(g.mascotas, cp.maxMascotas),
-                      };
-                    });
-                  }}
-                  className={`px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-                    cabin === c ? 'bg-[#163428] text-white' : 'bg-[#eee7da] text-[#3a3a3a] hover:bg-[#e5dbcd]'
-                  }`}
-                >
-                  {CABIN_LABEL[c]}
-                </button>
-              ))}
-            </div>
+        <div className="flex items-center gap-x-5 gap-y-1 flex-wrap text-xs text-secondary mb-4">
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[#e7e2d9] inline-block" />Ocupado</span>
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#111111] inline-block" />Tus fechas</span>
+          {minNoches > 1 && <span className="text-[#8a8a8a]">Estadía mínima: {minNoches} noches</span>}
+          {loadingAvailability && <span className="text-[#8a8a8a]">Cargando disponibilidad…</span>}
+        </div>
 
-            <div className="bg-white rounded-2xl p-7 shadow-[0_20px_40px_rgba(29,27,22,0.05)] flex flex-col gap-4">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <div className="flex items-baseline gap-3">
-                  <h2 className="font-serif text-lg text-[#001f14]">{rangeHeadline}</h2>
-                  {(checkIn || checkOut) && (
-                    <button
-                      onClick={() => { setCheckIn(null); setCheckOut(null); setHover(null); }}
-                      className="text-xs text-[#3a3a3a] underline font-semibold"
-                    >
-                      Borrar fechas
-                    </button>
-                  )}
-                </div>
-                <div className="text-xs text-secondary flex gap-4 items-center">
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[#e7e2d9] inline-block" />Ocupado</span>
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#111111] inline-block" />Tus fechas</span>
-                </div>
-              </div>
+        {/* Un calendario por Tiny, uno al lado del otro */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {CABINS.map((c) => (
+            <React.Fragment key={c}>{renderCalendario(c)}</React.Fragment>
+          ))}
+        </div>
 
-              {loadingAvailability && (
-                <div className="text-xs text-[#8a8a8a]">Cargando disponibilidad…</div>
-              )}
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                {MONTHS.map((month) => (
-                  <div key={month.m} className="flex flex-col gap-3.5">
-                    <div className="text-center text-[15px] font-bold text-[#001f14]">{month.label}</div>
-                    <div className="grid grid-cols-7">
-                      {WEEKDAY_LABELS.map((wd, i) => (
-                        <div key={i} className="text-center text-[10px] font-bold text-[#8a8a8a] uppercase tracking-wide pb-1.5">{wd}</div>
-                      ))}
-                    </div>
-                    <div className="grid grid-cols-7">
-                      {buildMonthDays(month).map((cell) => (
-                        <div key={cell.key} className={cell.wrapClass} onClick={cell.onClick} onMouseEnter={cell.onMouseEnter} onMouseLeave={cell.onMouseLeave}>
-                          {!cell.blank && <div className={cell.numClass}>{cell.label}</div>}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="text-sm text-[#3a3a3a] pt-1">
-                {checkIn && checkOut ? `${nights} noches en ${CABIN_LABEL[cabin]}` : checkIn ? 'Elige tu fecha de salida' : 'Elige tu fecha de llegada'}
-              </div>
-              {minNoches > 1 && <div className="text-xs text-[#8a8a8a]">Estadía mínima: {minNoches} noches.</div>}
-            </div>
-          </div>
-
-          {/* Summary side */}
-          <div className="flex-1 w-full bg-white rounded-xl p-7 shadow-[0_20px_40px_rgba(29,27,22,0.05)] flex flex-col gap-4 lg:sticky lg:top-24">
+        {/* Debajo: resumen y huéspedes a la izquierda, código, total y pago a la derecha, del mismo tamaño */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8 items-stretch">
+          <div className={`${CARD} h-full`}>
             <h2 className="font-serif text-xl text-[#001f14]">Resumen de tu reserva</h2>
 
             <div className="flex flex-col gap-2.5 pb-3.5">
-              <div className="flex justify-between text-sm"><span className="text-[#3a3a3a]">Cabaña</span><span className="font-semibold">{CABIN_LABEL[cabin]}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-[#3a3a3a]">Cabaña</span><span className="font-semibold">{checkIn ? CABIN_LABEL[cabin] : '—'}</span></div>
               <div className="flex justify-between text-sm"><span className="text-[#3a3a3a]">Check-in</span><span className="font-semibold">{checkIn ? `${checkIn.d} ${monthShort(checkIn.m)} 2026` : '—'}</span></div>
               <div className="flex justify-between text-sm"><span className="text-[#3a3a3a]">Check-out</span><span className="font-semibold">{checkOut ? `${checkOut.d} ${monthShort(checkOut.m)} 2026` : '—'}</span></div>
               <div className="flex justify-between text-sm"><span className="text-[#3a3a3a]">Noches</span><span className="font-semibold">{nights}</span></div>
@@ -495,8 +529,10 @@ export default function ReservarPage() {
               ))}
               <div className="text-[11px] text-[#8a8a8a]">Máximo {cap.maxHuespedes} huéspedes (adultos y niños; hasta {cap.maxAdultos} adultos y {cap.maxNinos} {cap.maxNinos === 1 ? 'niño' : 'niños'}).</div>
             </div>
+          </div>
 
-            <div className="h-px bg-[#eee7da]" />
+          <div className={`${CARD} h-full`}>
+            <h2 className="font-serif text-xl text-[#001f14]">Tu precio y pago</h2>
 
             <div className="flex flex-col gap-2 py-1">
               <label htmlFor="codigo-descuento" className="text-[11px] uppercase tracking-wide text-secondary font-bold">¿Tienes un código de descuento?</label>
@@ -593,18 +629,20 @@ export default function ReservarPage() {
               </div>
             </div>
 
-            <button
-              onClick={handlePagar}
-              disabled={!canSubmit}
-              className={`mt-2 text-center rounded-lg py-4 px-6 text-[15px] font-semibold transition-opacity ${
-                canSubmit ? 'bg-[#163428] text-white hover:opacity-90' : 'bg-[#dcd0bf] text-[#8a8a8a] cursor-not-allowed'
-              }`}
-            >
-              {submitting ? 'Redirigiendo a Flow…' : 'Pagar con Flow'}
-            </button>
-            {submitError && <div className="text-[12px] text-red-600 text-center">{submitError}</div>}
-            <div className="text-[11px] text-[#8a8a8a] text-center">
-              Pago 100% seguro procesado por Flow. Aceptamos tarjetas de crédito, débito y transferencia.
+            <div className="mt-auto flex flex-col gap-3 pt-2">
+              <button
+                onClick={handlePagar}
+                disabled={!canSubmit}
+                className={`text-center rounded-lg py-4 px-6 text-[15px] font-semibold transition-opacity ${
+                  canSubmit ? 'bg-[#163428] text-white hover:opacity-90' : 'bg-[#dcd0bf] text-[#8a8a8a] cursor-not-allowed'
+                }`}
+              >
+                {submitting ? 'Redirigiendo a Flow…' : 'Pagar con Flow'}
+              </button>
+              {submitError && <div className="text-[12px] text-red-600 text-center">{submitError}</div>}
+              <div className="text-[11px] text-[#8a8a8a] text-center">
+                Pago 100% seguro procesado por Flow. Aceptamos tarjetas de crédito, débito y transferencia.
+              </div>
             </div>
           </div>
         </div>

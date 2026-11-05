@@ -260,6 +260,8 @@ export default function AdminPage() {
         </nav>
 
         <div className={pestana === 'precios' ? 'grid grid-cols-1 lg:grid-cols-2 gap-8 items-start' : ''}>
+        {/* Columna izquierda de Precios: precio base y, debajo, la calculadora de ganancia neta */}
+        <div className={pestana === 'precios' ? 'flex flex-col gap-8 min-w-0' : 'hidden'}>
         <form onSubmit={handleGuardarPrecio} className={`w-full bg-white rounded-2xl p-7 shadow-[0_20px_40px_rgba(29,27,22,0.05)] flex flex-col gap-4 ${pestana === 'precios' ? '' : 'hidden'}`}>
           <div>
             <h2 className="font-serif text-xl text-[#001f14]">Precio base por noche</h2>
@@ -306,10 +308,11 @@ export default function AdminPage() {
           {precioMsg && <div className={`text-sm ${precioMsg.ok ? 'text-[#163428]' : 'text-red-600'}`}>{precioMsg.text}</div>}
         </form>
 
-        <TarifasAdmin precioBase={precioNoche} precioFinSemana={precioFinSemana} seccion={pestana === 'disponibilidad' || pestana === 'codigos' ? null : pestana} />
+        <CalculadoraUtilidad precioBase={precioNoche} />
         </div>
 
-        <CalculadoraUtilidad visible={pestana === 'precios'} precioBase={precioNoche} />
+        <TarifasAdmin precioBase={precioNoche} precioFinSemana={precioFinSemana} seccion={pestana === 'disponibilidad' || pestana === 'codigos' ? null : pestana} />
+        </div>
 
         <CodigosAdmin visible={pestana === 'codigos'} />
 
