@@ -86,14 +86,28 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ error: "No se pudo generar un código nuevo. Intenta otra vez." }, { status: 500 });
 }
 
-// Activa o desactiva un código (no se borran: queda el registro de usos).
-export async function PATCH(req: NextRequest) {
+// Elimina un código para descartar errores. Un código que ya se usó, o que tiene una reserva
+// pendiente de pago, no se puede eliminar (queda el registro y el descuento ya prometido).
+export async function DELETE(req: NextRequest) {
   if (!checkAuth(req)) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  const { id, activo } = await req.json().catch(() => ({}));
-  if (typeof id !== "string" || typeof activo !== "boolean") {
-    return NextResponse.json({ error: "Solicitud inválida" }, { status: 400 });
+  const id = req.nextUrl.searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "Falta el código a eliminar" }, { status: 400 });
+
+  const { data: fila, error: errFila } = await supabaseAdmin.from("codigos_descuento").select("id, codigo, usos").eq("id", id).maybeSingle();
+  if (errFila) return NextResponse.json({ error: errFila.message }, { status: 500 });
+  if (!fila) return NextResponse.json({ error: "Ese código ya no existe" }, { status: 404 });
+  if (fila.usos > 0) return NextResponse.json({ error: "Este código ya se usó y no se puede eliminar." }, { status: 409 });
+
+  const { count: pendientes } = await supabaseAdmin
+    .from("reservas")
+    .select("id", { count: "exact", head: true })
+    .eq("codigo_descuento", fila.codigo)
+    .eq("estado", "pendiente");
+  if ((pendientes ?? 0) > 0) {
+    return NextResponse.json({ error: "Este código tiene una reserva pendiente de pago. Espera a que se pague o se rechace." }, { status: 409 });
   }
-  const { data, error } = await supabaseAdmin.from("codigos_descuento").update({ activo }).eq("id", id).select().single();
+
+  const { error } = await supabaseAdmin.from("codigos_descuento").delete().eq("id", id).eq("usos", 0);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ codigo: data });
+  return NextResponse.json({ ok: true });
 }
