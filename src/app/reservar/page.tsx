@@ -92,6 +92,8 @@ export default function ReservarPage() {
   // Código de descuento: lo que escribe el huésped y el código ya validado por el servidor
   const [codigoInput, setCodigoInput] = useState('');
   const [codigoAplicado, setCodigoAplicado] = useState('');
+  // Celular con el que se validó el código: el código solo sirve para el celular con el que se pidió
+  const [celularAplicado, setCelularAplicado] = useState('');
   const [codigoMsg, setCodigoMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [validandoCodigo, setValidandoCodigo] = useState(false);
 
@@ -205,25 +207,31 @@ export default function ReservarPage() {
   const fechaInicioISO = checkIn ? `2026-${String(checkIn.m).padStart(2, '0')}-${String(checkIn.d).padStart(2, '0')}` : '';
   const fechaFinISO = checkOut ? `2026-${String(checkOut.m).padStart(2, '0')}-${String(checkOut.d).padStart(2, '0')}` : '';
   const cap = capacidad[cabin];
-  const quoteKey = checkIn && checkOut ? `${fechaInicioISO}|${fechaFinISO}|${cabin}|${guests.adultos}|${guests.ninos}|${guests.bebes}|${guests.mascotas}|${codigoAplicado}` : '';
+  const quoteKey = checkIn && checkOut ? `${fechaInicioISO}|${fechaFinISO}|${cabin}|${guests.adultos}|${guests.ninos}|${guests.bebes}|${guests.mascotas}|${codigoAplicado}|${celularAplicado}` : '';
 
   async function aplicarCodigo() {
     const codigo = codigoInput.trim();
     if (!codigo) return;
+    if (!guestPhone.trim()) {
+      setCodigoMsg({ ok: false, text: 'Escribe tu celular más abajo (el mismo con el que pediste el código) y vuelve a aplicar.' });
+      return;
+    }
     setValidandoCodigo(true);
     setCodigoMsg(null);
     try {
       const res = await fetch('/api/codigos/validar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ codigo }),
+        body: JSON.stringify({ codigo, celular: guestPhone }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setCodigoAplicado('');
+        setCelularAplicado('');
         setCodigoMsg({ ok: false, text: data.error || 'No pudimos revisar el código. Intenta nuevamente.' });
       } else {
         setCodigoAplicado(data.codigo);
+        setCelularAplicado(guestPhone);
         setCodigoInput(data.codigo);
         setCodigoMsg({ ok: true, text: `Código aplicado: ${data.porcentaje}% de descuento.` });
       }
@@ -235,6 +243,7 @@ export default function ReservarPage() {
 
   function quitarCodigo() {
     setCodigoAplicado('');
+    setCelularAplicado('');
     setCodigoInput('');
     setCodigoMsg(null);
   }
@@ -251,7 +260,7 @@ export default function ReservarPage() {
   useEffect(() => {
     if (!quoteKey) return;
     let cancelled = false;
-    const [fechaInicio, fechaFin, cabanaId, adultos, ninos, bebes, mascotas, codigo] = quoteKey.split('|');
+    const [fechaInicio, fechaFin, cabanaId, adultos, ninos, bebes, mascotas, codigo, celular] = quoteKey.split('|');
     fetch('/api/precios/calcular', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -261,6 +270,7 @@ export default function ReservarPage() {
         cabanaId,
         huespedes: { adultos: Number(adultos), ninos: Number(ninos), bebes: Number(bebes), mascotas: Number(mascotas) },
         codigo: codigo || undefined,
+        celular: celular || undefined,
       }),
     })
       .then(async (res) => {
@@ -270,6 +280,7 @@ export default function ReservarPage() {
           const err = await res.json().catch(() => ({}));
           if (!cancelled) {
             setCodigoAplicado('');
+            setCelularAplicado('');
             setCodigoMsg({ ok: false, text: err.error || 'El código ya no es válido.' });
           }
         }
@@ -565,6 +576,7 @@ export default function ReservarPage() {
                   </button>
                 )}
               </div>
+              <div className="text-[11px] text-[#8a8a8a]">Tu código solo sirve con el mismo celular con el que lo pediste; escríbelo más abajo, en «Celular».</div>
               {codigoMsg && <div className={`text-[12px] ${codigoMsg.ok ? 'text-[#163428]' : 'text-red-600'}`}>{codigoMsg.text}</div>}
               {codigoAplicado && cotizacion && cotizacion.descuentoOrigen !== 'codigo' && (
                 <div className="text-[12px] text-[#8a8a8a]">Tu estadía ya tiene un descuento igual o mayor por sus noches; el código no se suma a ese descuento.</div>
@@ -622,7 +634,15 @@ export default function ReservarPage() {
                 <input
                   type="tel"
                   value={guestPhone}
-                  onChange={(e) => setGuestPhone(e.target.value)}
+                  onChange={(e) => {
+                    setGuestPhone(e.target.value);
+                    // Si cambia el celular, el código aplicado deja de valer hasta volver a aplicarlo
+                    if (codigoAplicado && e.target.value !== celularAplicado) {
+                      setCodigoAplicado('');
+                      setCelularAplicado('');
+                      setCodigoMsg({ ok: false, text: 'Cambiaste el celular: vuelve a aplicar el código.' });
+                    }
+                  }}
                   placeholder="+56 9 1234 5678"
                   className="border-0 border-b-2 border-[#dcd0bf] py-2 px-0.5 text-sm bg-transparent outline-none focus:border-[#001f14]"
                 />

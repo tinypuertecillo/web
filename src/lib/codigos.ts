@@ -17,6 +17,17 @@ export function esFormatoCodigo(codigo: string): boolean {
   return /^[A-Z0-9-]{4,24}$/.test(codigo);
 }
 
+// Celular chileno en su forma estándar: 9 dígitos que parten con 9 (acepta +56, espacios y guiones). Vacío si no es válido.
+export function normalizarCelular(raw: unknown): string {
+  const digitos = typeof raw === "string" ? raw.replace(/\D/g, "") : "";
+  const sin56 = digitos.length === 11 && digitos.startsWith("56") ? digitos.slice(2) : digitos;
+  return /^9\d{8}$/.test(sin56) ? sin56 : "";
+}
+
+export function formatearCelular(celular: string): string {
+  return celular.length === 9 ? `+56 9 ${celular.slice(1, 5)} ${celular.slice(5)}` : celular;
+}
+
 export function generarCodigo(prefijo = "TINY"): string {
   let s = "";
   for (let i = 0; i < 5; i++) s += ALFABETO[crypto.randomInt(ALFABETO.length)];
@@ -28,7 +39,7 @@ export function hoyChile(): string {
   return new Date().toLocaleDateString("en-CA", { timeZone: "America/Santiago" });
 }
 
-export type CodigoValido = { id: string; codigo: string; porcentaje: number; validoHasta: string };
+export type CodigoValido = { id: string; codigo: string; porcentaje: number; validoHasta: string; celular: string | null };
 export type ResultadoCodigo = { ok: true; codigo: CodigoValido } | { ok: false; error: string; status: number };
 
 const ERROR_GENERICO = "El código no es válido, está vencido o ya se usó.";
@@ -38,7 +49,8 @@ function tablaNoExiste(error: { code?: string } | null) {
 }
 
 // Busca el código y comprueba que esté activo, vigente y con usos disponibles.
-export async function validarCodigo(raw: unknown): Promise<ResultadoCodigo> {
+// Si el código fue pedido con un celular, solo sirve cuando la reserva trae ese mismo celular.
+export async function validarCodigo(raw: unknown, celular?: unknown): Promise<ResultadoCodigo> {
   const codigo = normalizarCodigo(raw);
   if (!esFormatoCodigo(codigo)) return { ok: false, error: ERROR_GENERICO, status: 400 };
 
@@ -50,7 +62,15 @@ export async function validarCodigo(raw: unknown): Promise<ResultadoCodigo> {
   if (!data || !data.activo || data.valido_hasta < hoyChile() || data.usos >= data.usos_max) {
     return { ok: false, error: ERROR_GENERICO, status: 400 };
   }
-  return { ok: true, codigo: { id: data.id, codigo: data.codigo, porcentaje: Number(data.porcentaje), validoHasta: data.valido_hasta } };
+  const celularCodigo: string | null = typeof data.celular === "string" && data.celular ? data.celular : null;
+  if (celularCodigo) {
+    const enviado = normalizarCelular(celular);
+    if (!enviado) return { ok: false, error: "Escribe tu celular para aplicar el código.", status: 400 };
+    if (enviado !== celularCodigo) {
+      return { ok: false, error: "Este código está asociado a otro celular. Usa el mismo celular con el que lo pediste.", status: 400 };
+    }
+  }
+  return { ok: true, codigo: { id: data.id, codigo: data.codigo, porcentaje: Number(data.porcentaje), validoHasta: data.valido_hasta, celular: celularCodigo } };
 }
 
 function claveIp(req: NextRequest): string {
@@ -59,12 +79,12 @@ function claveIp(req: NextRequest): string {
 }
 
 // Igual que validarCodigo, pero frena a quien prueba muchos códigos seguidos (fuerza bruta).
-export async function validarCodigoConLimite(req: NextRequest, raw: unknown): Promise<ResultadoCodigo> {
+export async function validarCodigoConLimite(req: NextRequest, raw: unknown, celular?: unknown): Promise<ResultadoCodigo> {
   const clave = claveIp(req);
   if (segundosDeBloqueo(clave) > 0) {
     return { ok: false, error: "Demasiados intentos con códigos. Espera unos minutos e intenta de nuevo.", status: 429 };
   }
-  const res = await validarCodigo(raw);
+  const res = await validarCodigo(raw, celular);
   if (res.ok) limpiarFallos(clave);
   else if (res.status === 400) registrarFallo(clave);
   return res;

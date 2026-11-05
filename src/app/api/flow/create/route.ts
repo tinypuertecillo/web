@@ -56,7 +56,8 @@ export async function POST(req: NextRequest) {
     let codigoPct = 0;
     let codigoTexto = "";
     if (normalizarCodigo(codigo)) {
-      const res = await validarCodigoConLimite(req, codigo);
+      // El celular de la reserva debe ser el mismo con el que se pidió el código
+      const res = await validarCodigoConLimite(req, codigo, telefono);
       if (!res.ok) return NextResponse.json({ error: res.error }, { status: res.status });
       codigoPct = res.codigo.porcentaje;
       codigoTexto = res.codigo.codigo;
