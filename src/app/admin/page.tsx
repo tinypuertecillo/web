@@ -26,13 +26,12 @@ const CABIN_LABEL: Record<Cabin, string> = {
   poniente: 'Tiny House Poniente',
 };
 
-type Pestana = SeccionAdmin | 'disponibilidad' | 'codigos';
+type Pestana = SeccionAdmin | 'disponibilidad';
 
 const PESTANAS: { id: Pestana; titulo: string; detalle: string }[] = [
-  { id: 'precios', titulo: 'Precios', detalle: 'Precio por noche, estadía mínima y descuentos' },
+  { id: 'precios', titulo: 'Precios', detalle: 'Precio por noche, descuentos, códigos y calculadora' },
   { id: 'huespedes', titulo: 'Huéspedes y capacidad', detalle: 'Cobros adicionales y máximos por cabaña' },
   { id: 'calendario', titulo: 'Tarifas por calendario', detalle: 'Temporadas y precios por fecha' },
-  { id: 'codigos', titulo: 'Códigos de descuento', detalle: 'Crear códigos para huéspedes y ver su uso' },
   { id: 'disponibilidad', titulo: 'Disponibilidad', detalle: 'Bloquear y desbloquear fechas' },
 ];
 
@@ -242,7 +241,7 @@ export default function AdminPage() {
           </button>
         </div>
 
-        <nav className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-8" aria-label="Secciones del panel">
+        <nav className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8" aria-label="Secciones del panel">
           {PESTANAS.map((t) => (
             <button
               key={t.id}
@@ -311,10 +310,12 @@ export default function AdminPage() {
         <CalculadoraUtilidad precioBase={precioNoche} />
         </div>
 
-        <TarifasAdmin precioBase={precioNoche} precioFinSemana={precioFinSemana} seccion={pestana === 'disponibilidad' || pestana === 'codigos' ? null : pestana} />
+        {/* Columna derecha de Precios: descuentos por noches y, debajo, los códigos de descuento por celular */}
+        <div className={pestana === 'precios' ? 'flex flex-col gap-8 min-w-0' : ''}>
+        <TarifasAdmin precioBase={precioNoche} precioFinSemana={precioFinSemana} seccion={pestana === 'disponibilidad' ? null : pestana} />
+        <CodigosAdmin visible={pestana === 'precios'} />
         </div>
-
-        <CodigosAdmin visible={pestana === 'codigos'} />
+        </div>
 
         <div className={`grid grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-8 items-start ${pestana === 'disponibilidad' ? '' : 'hidden'}`}>
           <form onSubmit={handleAddBloqueo} className="flex-1 w-full bg-white rounded-2xl p-7 shadow-[0_20px_40px_rgba(29,27,22,0.05)] flex flex-col gap-4">

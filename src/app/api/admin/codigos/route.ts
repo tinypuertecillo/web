@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { isValidSessionToken, ADMIN_COOKIE_NAME } from "@/lib/adminAuth";
-import { esFormatoCodigo, generarCodigo, hoyChile, normalizarCodigo } from "@/lib/codigos";
+import { generarCodigo, hoyChile, normalizarCelular } from "@/lib/codigos";
 import { esFechaValida } from "@/lib/pricingCore";
 
 export const dynamic = "force-dynamic";
@@ -11,12 +11,18 @@ function checkAuth(req: NextRequest) {
 }
 
 const SIN_TABLA = "Falta crear la tabla de códigos. Ejecuta supabase_codigos_descuento.sql en Supabase.";
+const SIN_CELULAR = "Falta agregar el celular a los códigos. Ejecuta supabase_codigos_celular.sql en Supabase.";
 
 function tablaNoExiste(error: { code?: string } | null) {
   return error?.code === "42P01" || error?.code === "PGRST205";
 }
 
-// Lista los códigos (los más nuevos primero).
+// Columna celular que todavía no existe (Postgres 42703 o PostgREST PGRST204)
+function faltaColumnaCelular(error: { code?: string; message?: string } | null) {
+  return error?.code === "42703" || error?.code === "PGRST204" || (!!error?.message && error.message.includes("celular"));
+}
+
+// Lista los códigos pedidos (los más nuevos primero).
 export async function GET(req: NextRequest) {
   if (!checkAuth(req)) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   const { data, error } = await supabaseAdmin.from("codigos_descuento").select("*").order("created_at", { ascending: false }).limit(500);
@@ -27,12 +33,16 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ codigos: data ?? [], hoy: hoyChile() });
 }
 
-// Crea uno o varios códigos con el mismo porcentaje y vigencia. El código se genera solo (TINY-XXXXX)
-// salvo que se escriba uno propio (solo cuando se crea uno).
+// Genera el código de una persona: formato fijo TINY-XXXXX, un solo uso, asociado a su celular.
+// Si ese celular ya tiene un código vigente sin usar, no se crea otro: se devuelve el que ya tiene.
 export async function POST(req: NextRequest) {
   if (!checkAuth(req)) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   const body = await req.json().catch(() => ({}));
 
+  const celular = normalizarCelular(body.celular);
+  if (!celular) {
+    return NextResponse.json({ error: "Escribe un celular chileno válido (9 dígitos, que parta con 9)" }, { status: 400 });
+  }
   const porcentaje = Number(body.porcentaje);
   if (!Number.isFinite(porcentaje) || porcentaje <= 0 || porcentaje >= 100) {
     return NextResponse.json({ error: "El porcentaje debe ser mayor a 0 y menor a 100" }, { status: 400 });
@@ -41,45 +51,39 @@ export async function POST(req: NextRequest) {
   if (!esFechaValida(validoHasta) || validoHasta < hoyChile()) {
     return NextResponse.json({ error: "Elige una fecha de vigencia que no haya pasado" }, { status: 400 });
   }
-  const usosMax = body.usosMax === undefined || body.usosMax === "" ? 1 : Number(body.usosMax);
-  if (!Number.isInteger(usosMax) || usosMax < 1 || usosMax > 1000) {
-    return NextResponse.json({ error: "Los usos deben ser un número entero entre 1 y 1000" }, { status: 400 });
-  }
-  const cantidad = body.cantidad === undefined || body.cantidad === "" ? 1 : Number(body.cantidad);
-  if (!Number.isInteger(cantidad) || cantidad < 1 || cantidad > 50) {
-    return NextResponse.json({ error: "La cantidad debe ser un número entero entre 1 y 50" }, { status: 400 });
-  }
   const nota = typeof body.nota === "string" && body.nota.trim() ? body.nota.trim().slice(0, 200) : null;
 
-  const propio = normalizarCodigo(body.codigo);
-  if (propio && (cantidad !== 1 || !esFormatoCodigo(propio))) {
-    return NextResponse.json({ error: "Un código propio debe tener entre 4 y 24 letras, números o guiones, y se crea de a uno" }, { status: 400 });
+  // ¿Ya tiene un código vigente sin usar?
+  const { data: previos, error: errPrevios } = await supabaseAdmin
+    .from("codigos_descuento")
+    .select("*")
+    .eq("celular", celular)
+    .eq("activo", true)
+    .gte("valido_hasta", hoyChile())
+    .order("created_at", { ascending: false });
+  if (errPrevios) {
+    if (tablaNoExiste(errPrevios)) return NextResponse.json({ error: SIN_TABLA, sinTabla: true }, { status: 503 });
+    if (faltaColumnaCelular(errPrevios)) return NextResponse.json({ error: SIN_CELULAR, sinTabla: true }, { status: 503 });
+    return NextResponse.json({ error: errPrevios.message }, { status: 500 });
+  }
+  const vigente = (previos ?? []).find((p) => p.usos < p.usos_max);
+  if (vigente) {
+    return NextResponse.json({ error: "Este celular ya tiene un código vigente sin usar.", existente: vigente }, { status: 409 });
   }
 
-  const creados = [];
-  for (let i = 0; i < cantidad; i++) {
-    let fila = null;
-    // Si el código generado ya existe (muy poco probable), se prueba con otro
-    for (let intento = 0; intento < 6 && !fila; intento++) {
-      const { data, error } = await supabaseAdmin
-        .from("codigos_descuento")
-        .insert({ codigo: propio || generarCodigo(), porcentaje, valido_hasta: validoHasta, usos_max: usosMax, nota })
-        .select()
-        .single();
-      if (!error) {
-        fila = data;
-      } else if (tablaNoExiste(error)) {
-        return NextResponse.json({ error: SIN_TABLA, sinTabla: true }, { status: 503 });
-      } else if (error.code === "23505") {
-        if (propio) return NextResponse.json({ error: "Ese código ya existe" }, { status: 409 });
-      } else {
-        return NextResponse.json({ error: error.message }, { status: 500 });
-      }
-    }
-    if (!fila) return NextResponse.json({ error: "No se pudo generar un código nuevo. Intenta otra vez." }, { status: 500 });
-    creados.push(fila);
+  // Si el código generado ya existe (muy poco probable), se prueba con otro
+  for (let intento = 0; intento < 6; intento++) {
+    const { data, error } = await supabaseAdmin
+      .from("codigos_descuento")
+      .insert({ codigo: generarCodigo(), porcentaje, valido_hasta: validoHasta, usos_max: 1, nota, celular })
+      .select()
+      .single();
+    if (!error) return NextResponse.json({ codigo: data });
+    if (tablaNoExiste(error)) return NextResponse.json({ error: SIN_TABLA, sinTabla: true }, { status: 503 });
+    if (faltaColumnaCelular(error)) return NextResponse.json({ error: SIN_CELULAR, sinTabla: true }, { status: 503 });
+    if (error.code !== "23505") return NextResponse.json({ error: error.message }, { status: 500 });
   }
-  return NextResponse.json({ codigos: creados });
+  return NextResponse.json({ error: "No se pudo generar un código nuevo. Intenta otra vez." }, { status: 500 });
 }
 
 // Activa o desactiva un código (no se borran: queda el registro de usos).
