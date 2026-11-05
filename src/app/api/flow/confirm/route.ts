@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getFlowStatus } from "@/lib/flow";
+import { usarCodigo } from "@/lib/codigos";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,12 @@ export async function POST(req: NextRequest) {
       }
 
       await supabaseAdmin.from("reservas").update({ estado: "pagada" }).eq("id", commerceOrder);
+
+      // Si la reserva usó un código de descuento, se descuenta un uso solo ahora que el pago está confirmado
+      if (reserva.codigo_descuento) {
+        const ok = await usarCodigo(String(reserva.codigo_descuento));
+        if (!ok) console.error(`[flow/confirm] El código ${reserva.codigo_descuento} de la orden ${commerceOrder} ya no tenía usos disponibles. Revisar en /admin.`);
+      }
 
       // Si las fechas ya están bloqueadas por otra reserva (dos pagos a la vez), no se duplica el bloqueo:
       // el pago queda registrado y se avisa en el registro para resolverlo a mano (devolución o cambio de fechas).

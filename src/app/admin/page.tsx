@@ -4,6 +4,8 @@ import React, { useEffect, useState, useCallback } from 'react';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import TarifasAdmin, { type SeccionAdmin } from './TarifasAdmin';
+import CodigosAdmin from './CodigosAdmin';
+import CalculadoraUtilidad from './CalculadoraUtilidad';
 
 type Cabin = 'naciente' | 'poniente';
 
@@ -24,12 +26,13 @@ const CABIN_LABEL: Record<Cabin, string> = {
   poniente: 'Tiny House Poniente',
 };
 
-type Pestana = SeccionAdmin | 'disponibilidad';
+type Pestana = SeccionAdmin | 'disponibilidad' | 'codigos';
 
 const PESTANAS: { id: Pestana; titulo: string; detalle: string }[] = [
   { id: 'precios', titulo: 'Precios', detalle: 'Precio por noche, estadía mínima y descuentos' },
   { id: 'huespedes', titulo: 'Huéspedes y capacidad', detalle: 'Cobros adicionales y máximos por cabaña' },
   { id: 'calendario', titulo: 'Tarifas por calendario', detalle: 'Temporadas y precios por fecha' },
+  { id: 'codigos', titulo: 'Códigos de descuento', detalle: 'Crear códigos para huéspedes y ver su uso' },
   { id: 'disponibilidad', titulo: 'Disponibilidad', detalle: 'Bloquear y desbloquear fechas' },
 ];
 
@@ -239,7 +242,7 @@ export default function AdminPage() {
           </button>
         </div>
 
-        <nav className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8" aria-label="Secciones del panel">
+        <nav className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-8" aria-label="Secciones del panel">
           {PESTANAS.map((t) => (
             <button
               key={t.id}
@@ -303,8 +306,12 @@ export default function AdminPage() {
           {precioMsg && <div className={`text-sm ${precioMsg.ok ? 'text-[#163428]' : 'text-red-600'}`}>{precioMsg.text}</div>}
         </form>
 
-        <TarifasAdmin precioBase={precioNoche} precioFinSemana={precioFinSemana} seccion={pestana === 'disponibilidad' ? null : pestana} />
+        <TarifasAdmin precioBase={precioNoche} precioFinSemana={precioFinSemana} seccion={pestana === 'disponibilidad' || pestana === 'codigos' ? null : pestana} />
         </div>
+
+        <CalculadoraUtilidad visible={pestana === 'precios'} precioBase={precioNoche} />
+
+        <CodigosAdmin visible={pestana === 'codigos'} />
 
         <div className={`grid grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] gap-8 items-start ${pestana === 'disponibilidad' ? '' : 'hidden'}`}>
           <form onSubmit={handleAddBloqueo} className="flex-1 w-full bg-white rounded-2xl p-7 shadow-[0_20px_40px_rgba(29,27,22,0.05)] flex flex-col gap-4">

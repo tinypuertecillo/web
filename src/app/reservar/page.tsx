@@ -19,6 +19,7 @@ type Cotizacion = {
   descuentoPct: number;
   descuento: number;
   total: number;
+  descuentoOrigen?: 'noches' | 'codigo' | null;
 };
 
 const EXTRA_LABEL: Record<string, string> = {
@@ -79,6 +80,11 @@ export default function ReservarPage() {
   const [guests, setGuests] = useState<Huespedes>({ adultos: 1, ninos: 0, bebes: 0, mascotas: 0 });
   const [capacidad, setCapacidad] = useState<Record<Cabin, Capacidad>>(CAPACIDAD_INICIAL);
   const [minNoches, setMinNoches] = useState(1);
+  // Código de descuento: lo que escribe el huésped y el código ya validado por el servidor
+  const [codigoInput, setCodigoInput] = useState('');
+  const [codigoAplicado, setCodigoAplicado] = useState('');
+  const [codigoMsg, setCodigoMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [validandoCodigo, setValidandoCodigo] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -166,7 +172,39 @@ export default function ReservarPage() {
   const fechaInicioISO = checkIn ? `2026-${String(checkIn.m).padStart(2, '0')}-${String(checkIn.d).padStart(2, '0')}` : '';
   const fechaFinISO = checkOut ? `2026-${String(checkOut.m).padStart(2, '0')}-${String(checkOut.d).padStart(2, '0')}` : '';
   const cap = capacidad[cabin];
-  const quoteKey = checkIn && checkOut ? `${fechaInicioISO}|${fechaFinISO}|${cabin}|${guests.adultos}|${guests.ninos}|${guests.bebes}|${guests.mascotas}` : '';
+  const quoteKey = checkIn && checkOut ? `${fechaInicioISO}|${fechaFinISO}|${cabin}|${guests.adultos}|${guests.ninos}|${guests.bebes}|${guests.mascotas}|${codigoAplicado}` : '';
+
+  async function aplicarCodigo() {
+    const codigo = codigoInput.trim();
+    if (!codigo) return;
+    setValidandoCodigo(true);
+    setCodigoMsg(null);
+    try {
+      const res = await fetch('/api/codigos/validar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codigo }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setCodigoAplicado('');
+        setCodigoMsg({ ok: false, text: data.error || 'No pudimos revisar el código. Intenta nuevamente.' });
+      } else {
+        setCodigoAplicado(data.codigo);
+        setCodigoInput(data.codigo);
+        setCodigoMsg({ ok: true, text: `Código aplicado: ${data.porcentaje}% de descuento.` });
+      }
+    } catch {
+      setCodigoMsg({ ok: false, text: 'No pudimos revisar el código. Intenta nuevamente.' });
+    }
+    setValidandoCodigo(false);
+  }
+
+  function quitarCodigo() {
+    setCodigoAplicado('');
+    setCodigoInput('');
+    setCodigoMsg(null);
+  }
 
   const cambiarHuespedes = (campo: keyof Huespedes, delta: number) => {
     setGuests((g) => {
@@ -180,7 +218,7 @@ export default function ReservarPage() {
   useEffect(() => {
     if (!quoteKey) return;
     let cancelled = false;
-    const [fechaInicio, fechaFin, cabanaId, adultos, ninos, bebes, mascotas] = quoteKey.split('|');
+    const [fechaInicio, fechaFin, cabanaId, adultos, ninos, bebes, mascotas, codigo] = quoteKey.split('|');
     fetch('/api/precios/calcular', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -189,9 +227,21 @@ export default function ReservarPage() {
         fechaFin,
         cabanaId,
         huespedes: { adultos: Number(adultos), ninos: Number(ninos), bebes: Number(bebes), mascotas: Number(mascotas) },
+        codigo: codigo || undefined,
       }),
     })
-      .then((res) => (res.ok ? res.json() : null))
+      .then(async (res) => {
+        if (res.ok) return res.json();
+        // Si el código dejó de servir (venció o se agotó), se quita y se cotiza sin él
+        if (codigo && res.status < 500) {
+          const err = await res.json().catch(() => ({}));
+          if (!cancelled) {
+            setCodigoAplicado('');
+            setCodigoMsg({ ok: false, text: err.error || 'El código ya no es válido.' });
+          }
+        }
+        return null;
+      })
       .then((data) => {
         if (!cancelled && data) setQuote({ key: quoteKey, data });
       })
@@ -227,6 +277,7 @@ export default function ReservarPage() {
           fechaInicio,
           fechaFin,
           huespedes: guests,
+          codigo: codigoAplicado || undefined,
           nombre: guestName,
           email: guestEmail,
           telefono: guestPhone || undefined,
@@ -447,6 +498,45 @@ export default function ReservarPage() {
 
             <div className="h-px bg-[#eee7da]" />
 
+            <div className="flex flex-col gap-2 py-1">
+              <label htmlFor="codigo-descuento" className="text-[11px] uppercase tracking-wide text-secondary font-bold">¿Tienes un código de descuento?</label>
+              <div className="flex items-end gap-3">
+                <input
+                  id="codigo-descuento"
+                  type="text"
+                  value={codigoInput}
+                  onChange={(e) => {
+                    setCodigoInput(e.target.value.toUpperCase());
+                    if (codigoAplicado) setCodigoAplicado('');
+                    setCodigoMsg(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      aplicarCodigo();
+                    }
+                  }}
+                  placeholder="Ej: TINY-AB12C"
+                  autoComplete="off"
+                  maxLength={24}
+                  className="flex-1 border-0 border-b-2 border-[#dcd0bf] py-2 px-0.5 text-sm bg-transparent outline-none focus:border-[#001f14] uppercase"
+                />
+                {codigoAplicado ? (
+                  <button type="button" onClick={quitarCodigo} className="rounded-lg py-2.5 px-4 text-sm font-semibold bg-[#eee7da] text-[#3a3a3a] hover:bg-[#e5dbcd]">Quitar</button>
+                ) : (
+                  <button type="button" onClick={aplicarCodigo} disabled={!codigoInput.trim() || validandoCodigo} className="rounded-lg py-2.5 px-4 text-sm font-semibold bg-[#163428] text-white hover:opacity-90 disabled:opacity-40">
+                    {validandoCodigo ? 'Revisando…' : 'Aplicar'}
+                  </button>
+                )}
+              </div>
+              {codigoMsg && <div className={`text-[12px] ${codigoMsg.ok ? 'text-[#163428]' : 'text-red-600'}`}>{codigoMsg.text}</div>}
+              {codigoAplicado && cotizacion && cotizacion.descuentoOrigen !== 'codigo' && (
+                <div className="text-[12px] text-[#8a8a8a]">Tu estadía ya tiene un descuento igual o mayor por sus noches; el código no se suma a ese descuento.</div>
+              )}
+            </div>
+
+            <div className="h-px bg-[#eee7da]" />
+
             {cotizacion && (cotizacion.extrasTotal > 0 || cotizacion.descuento > 0) && (
               <div className="flex flex-col gap-2 pt-2">
                 <div className="flex justify-between text-sm"><span className="text-[#3a3a3a]">{cotizacion.noches} {cotizacion.noches === 1 ? 'noche' : 'noches'}</span><span className="font-semibold">{fmtCLP(cotizacion.subtotalNoches)}</span></div>
@@ -459,7 +549,7 @@ export default function ReservarPage() {
             {cotizacion && cotizacion.descuento > 0 && (
               <div className="flex flex-col gap-2">
                 <div className="flex justify-between text-sm"><span className="text-[#3a3a3a]">Subtotal</span><span className="font-semibold">{fmtCLP(cotizacion.subtotal)}</span></div>
-                <div className="flex justify-between text-sm"><span className="text-[#3a3a3a]">Descuento {cotizacion.descuentoPct}%</span><span className="font-semibold text-[#2b4c3f]">−{fmtCLP(cotizacion.descuento)}</span></div>
+                <div className="flex justify-between text-sm"><span className="text-[#3a3a3a]">{cotizacion.descuentoOrigen === 'codigo' ? `Código ${codigoAplicado} · ${cotizacion.descuentoPct}%` : `Descuento ${cotizacion.descuentoPct}%`}</span><span className="font-semibold text-[#2b4c3f]">−{fmtCLP(cotizacion.descuento)}</span></div>
               </div>
             )}
 
