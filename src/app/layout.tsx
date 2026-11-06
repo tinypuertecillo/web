@@ -86,6 +86,9 @@ const jsonLd = {
   sameAs: [
     "https://www.instagram.com/tinypuertecillo.cl/",
     "https://www.airbnb.cl/rooms/1702295511791817167",
+    "https://www.booking.com/hotel/cl/tiny-puertecillo-entre-el-bosque-y-el-mar.es.html",
+    "https://www.tiktok.com/@tinypuertecillo",
+    "https://www.facebook.com/profile.php?id=61594948202188",
   ],
 };
 

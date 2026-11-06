@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 
-const AIRBNB_URL = 'https://www.airbnb.cl/rooms/1702295511791817167';
+import { AIRBNB_URL, BOOKING_URL } from '@/lib/links';
 
 export default function SiteHeader() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -31,6 +31,14 @@ export default function SiteHeader() {
             >
               Airbnb
             </a>
+            <a
+              href={BOOKING_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-primary-container text-on-primary px-5 lg:px-6 py-2.5 rounded-full font-label font-semibold tracking-wide text-sm hover:opacity-90 active:scale-[0.97] transition-all inline-block whitespace-nowrap shadow-sm"
+            >
+              Booking
+            </a>
           </div>
           <button
             className="md:hidden p-2 text-[#1d1b16] dark:text-[#f9f3ea]"
@@ -53,6 +61,14 @@ export default function SiteHeader() {
                 className="bg-primary-container text-on-primary text-center px-6 py-3.5 rounded-full font-label font-semibold tracking-wide text-sm shadow-sm"
               >
                 Reservar en Airbnb
+              </a>
+              <a
+                href={BOOKING_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-primary-container text-on-primary text-center px-6 py-3.5 rounded-full font-label font-semibold tracking-wide text-sm shadow-sm"
+              >
+                Reservar en Booking
               </a>
             </div>
             <div className="flex flex-col gap-4 border-t border-outline-variant/10 pt-4">

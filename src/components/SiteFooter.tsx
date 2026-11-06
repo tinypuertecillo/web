@@ -1,9 +1,6 @@
 import React from 'react';
-import { InstagramIcon, WhatsAppIcon } from './icons';
-
-const AIRBNB_URL = 'https://www.airbnb.cl/rooms/1702295511791817167';
-const WHATSAPP_URL = 'https://wa.me/56979587293?text=' + encodeURIComponent('Hola, quiero consultar por una Tiny en Puertecillo');
-const INSTAGRAM_URL = 'https://www.instagram.com/tinypuertecillo.cl/';
+import { InstagramIcon, TikTokIcon, FacebookIcon, WhatsAppIcon } from './icons';
+import { AIRBNB_URL, BOOKING_URL, WHATSAPP_URL, INSTAGRAM_URL, TIKTOK_URL, FACEBOOK_URL } from '@/lib/links';
 
 export default function SiteFooter() {
   return (
@@ -35,6 +32,14 @@ export default function SiteFooter() {
             >
               Airbnb
             </a>
+            <a
+              href={BOOKING_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-primary-container text-on-primary px-5 py-2 rounded-full font-label font-semibold tracking-wide text-xs hover:opacity-90 active:scale-[0.97] transition-all"
+            >
+              Booking
+            </a>
           </div>
         </div>
         <div className="flex flex-col items-center md:items-start gap-4">
@@ -54,10 +59,18 @@ export default function SiteFooter() {
             <a className="text-[#1d1b16] dark:text-[#f9f3ea] opacity-75 hover:opacity-100 hover:text-[#964828] dark:hover:text-[#fff9ef] transition-all font-label text-sm" href="/">Sustentabilidad</a>
           </div>
           <div className="flex flex-col items-center md:items-start gap-3 pt-1">
-            <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="text-[#1d1b16] dark:text-[#f9f3ea] opacity-75 hover:opacity-100 hover:text-[#964828] dark:hover:text-[#fff9ef] transition-all font-label text-sm inline-flex items-center gap-2">
-              <InstagramIcon className="w-4 h-4" />
-              Instagram
-            </a>
+              <a href={INSTAGRAM_URL} target="_blank" rel="noopener noreferrer" className="text-[#1d1b16] dark:text-[#f9f3ea] opacity-75 hover:opacity-100 hover:text-[#964828] dark:hover:text-[#fff9ef] transition-all font-label text-sm inline-flex items-center gap-2">
+                <InstagramIcon className="w-4 h-4" />
+                Instagram
+              </a>
+              <a href={TIKTOK_URL} target="_blank" rel="noopener noreferrer" className="text-[#1d1b16] dark:text-[#f9f3ea] opacity-75 hover:opacity-100 hover:text-[#964828] dark:hover:text-[#fff9ef] transition-all font-label text-sm inline-flex items-center gap-2">
+                <TikTokIcon className="w-4 h-4" />
+                TikTok
+              </a>
+              <a href={FACEBOOK_URL} target="_blank" rel="noopener noreferrer" className="text-[#1d1b16] dark:text-[#f9f3ea] opacity-75 hover:opacity-100 hover:text-[#964828] dark:hover:text-[#fff9ef] transition-all font-label text-sm inline-flex items-center gap-2">
+                <FacebookIcon className="w-4 h-4" />
+                Facebook
+              </a>
             <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer" className="text-[#1d1b16] dark:text-[#f9f3ea] opacity-75 hover:opacity-100 hover:text-[#964828] dark:hover:text-[#fff9ef] transition-all font-label text-sm inline-flex items-center gap-2">
               <WhatsAppIcon className="w-4 h-4" />
               WhatsApp
@@ -68,6 +81,7 @@ export default function SiteFooter() {
       <div className="relative flex md:hidden justify-center mt-10">
         <div className="flex items-center gap-1 rounded-full border border-[#163428]/15 dark:border-[#fff9ef]/20 bg-white/40 dark:bg-white/5 p-1">
           <a href={AIRBNB_URL} target="_blank" rel="noopener noreferrer" className="bg-primary-container text-on-primary px-5 py-2 rounded-full font-label font-semibold tracking-wide text-xs">Airbnb</a>
+            <a href={BOOKING_URL} target="_blank" rel="noopener noreferrer" className="bg-primary-container text-on-primary px-5 py-2 rounded-full font-label font-semibold tracking-wide text-xs">Booking</a>
         </div>
       </div>
       <div className="relative max-w-7xl mx-auto w-full mt-14 pt-6 border-t border-[#1d1b16]/10 dark:border-[#f9f3ea]/10 flex flex-col sm:flex-row items-center justify-between gap-3">
