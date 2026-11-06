@@ -542,12 +542,12 @@
           "id": "block_reservas",
           "label": "Reservas",
           "type": "text",
-          "span": "48x20",
+          "span": "48x42",
           "col": 1,
           "row": 206,
           "tCol": 1,
           "tRow": 460,
-          "tSpan": "48x16",
+          "tSpan": "48x42",
           "mCol": 1,
           "mRow": 460,
           "mSpan": "48x16",
@@ -557,10 +557,11 @@
           "textColor": "#1d1b16",
           "textPadding": "40px",
           "textAlign": "center",
+          "textVerticalAlign": "center",
           "blockTitle": "Inicia tu escape",
-          "blockParagraph": "Reserva tu estadía de forma segura a través de Airbnb.",
-          "buttonText": "Reservar en Airbnb",
-          "buttonLink": "https://www.airbnb.cl/rooms/1702295511791817167"
+          "blockParagraph": "Reserva directo en nuestro sitio, sin intermediarios.",
+          "buttonText": "Reservar en la web",
+          "buttonLink": "/reservar"
         }
       ]
     }
