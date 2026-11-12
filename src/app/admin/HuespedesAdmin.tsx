@@ -1,15 +1,11 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { EXTRAS_POR_DEFECTO, type Capacidad, type ExtrasHuespedes, type TipoHuesped } from '@/lib/pricingCore';
-
-const INPUT = 'border-0 border-b-2 border-[#dcd0bf] py-2 px-0.5 text-sm bg-transparent outline-none focus:border-[#001f14]';
-const LABEL = 'text-[11px] uppercase tracking-wide text-secondary font-bold';
-const CARD = 'w-full bg-white rounded-2xl p-7 shadow-[0_20px_40px_rgba(29,27,22,0.05)] flex flex-col gap-4 mb-10';
-const BTN = 'rounded-lg py-3.5 px-6 text-[15px] font-semibold bg-[#163428] text-white hover:opacity-90 transition-opacity disabled:opacity-50';
+import { calcularPrecioConConfig, EXTRAS_POR_DEFECTO, type Capacidad, type DescuentoNoches, type ExtrasHuespedes, type TipoHuesped } from '@/lib/pricingCore';
+import { fmtCLP } from './ui';
 
 const TIPOS: { tipo: TipoHuesped; titulo: string; detalle: string }[] = [
-  { tipo: 'adulto', titulo: 'Adulto adicional', detalle: 'Desde el 2º adulto' },
+  { tipo: 'adulto', titulo: 'Adulto adicional', detalle: 'Desde el 2.º adulto' },
   { tipo: 'nino', titulo: 'Niño', detalle: 'De 2 a 12 años' },
   { tipo: 'bebe', titulo: 'Bebé', detalle: 'Menos de 2 años' },
   { tipo: 'mascota', titulo: 'Mascota', detalle: 'Por mascota' },
@@ -47,26 +43,30 @@ const capAForm = (c: Record<Cabana, Capacidad>): CapForm => ({
 });
 
 const CAP_CAMPOS: { campo: keyof CapCampos; label: string; min: number }[] = [
-  { campo: 'maxHuespedes', label: 'Total adultos + niños', min: 1 },
-  { campo: 'maxAdultos', label: 'Máx. adultos', min: 1 },
-  { campo: 'maxNinos', label: 'Máx. niños', min: 0 },
-  { campo: 'maxBebes', label: 'Máx. bebés', min: 0 },
-  { campo: 'maxMascotas', label: 'Máx. mascotas', min: 0 },
+  { campo: 'maxHuespedes', label: 'Huéspedes', min: 1 },
+  { campo: 'maxAdultos', label: 'Adultos', min: 1 },
+  { campo: 'maxNinos', label: 'Niños', min: 0 },
+  { campo: 'maxBebes', label: 'Bebés', min: 0 },
+  { campo: 'maxMascotas', label: 'Mascotas', min: 0 },
 ];
 
-export default function HuespedesAdmin({ precioBase, hayDescuentos }: { precioBase: number | null; hayDescuentos: boolean }) {
+// parte: 'cobros' = lo que suma cada huésped adicional; 'capacidad' = máximos por cabaña. Las dos se guardan juntas.
+export default function HuespedesAdmin({ precioBase, parte }: { precioBase: number | null; parte: 'cobros' | 'capacidad' }) {
   const [extras, setExtras] = useState<ExtrasForm>(aForm(EXTRAS_POR_DEFECTO));
   const [cap, setCap] = useState<CapForm>({
     naciente: { maxHuespedes: '4', maxAdultos: '3', maxNinos: '1', maxBebes: '10', maxMascotas: '1' },
     poniente: { maxHuespedes: '4', maxAdultos: '3', maxNinos: '1', maxBebes: '10', maxMascotas: '1' },
   });
+  const [descuentos, setDescuentos] = useState<DescuentoNoches[]>([]);
   const [msg, setMsg] = useState<Msg>(null);
   const [guardando, setGuardando] = useState(false);
 
   const fetchTodo = useCallback(async () => {
     const [a, c] = await Promise.all([fetch('/api/admin/precios/ajustes'), fetch('/api/admin/precios/capacidad')]);
+    const ajustes = a.ok ? await a.json() : null;
     return {
-      extras: a.ok ? ((await a.json()).extras as ExtrasHuespedes | undefined) : undefined,
+      extras: ajustes ? (ajustes.extras as ExtrasHuespedes | undefined) : undefined,
+      descuentos: ajustes ? ((ajustes.descuentos ?? []) as DescuentoNoches[]) : [],
       capacidad: c.ok ? ((await c.json()).capacidad as Record<Cabana, Capacidad>) : undefined,
     };
   }, []);
@@ -74,6 +74,7 @@ export default function HuespedesAdmin({ precioBase, hayDescuentos }: { precioBa
   useEffect(() => {
     fetchTodo().then((d) => {
       if (d.extras) setExtras(aForm(d.extras));
+      setDescuentos(d.descuentos);
       if (d.capacidad) setCap(capAForm(d.capacidad));
     });
   }, [fetchTodo]);
@@ -87,7 +88,7 @@ export default function HuespedesAdmin({ precioBase, hayDescuentos }: { precioBa
     const actual = await fetch('/api/admin/precios/ajustes').then((r) => (r.ok ? r.json() : null));
     if (!actual) {
       setGuardando(false);
-      setMsg({ ok: false, text: 'No se pudo leer la configuración actual' });
+      setMsg({ ok: false, text: 'No se pudo leer la configuración actual. Intenta de nuevo.' });
       return;
     }
 
@@ -103,7 +104,7 @@ export default function HuespedesAdmin({ precioBase, hayDescuentos }: { precioBa
     const d1 = await r1.json().catch(() => ({}));
     if (!r1.ok) {
       setGuardando(false);
-      setMsg({ ok: false, text: d1.error || 'No se pudieron guardar los adicionales' });
+      setMsg({ ok: false, text: d1.error || 'No se pudieron guardar los cobros.' });
       return;
     }
 
@@ -119,79 +120,105 @@ export default function HuespedesAdmin({ precioBase, hayDescuentos }: { precioBa
     const d2 = await r2.json().catch(() => ({}));
     setGuardando(false);
     if (!r2.ok) {
-      setMsg({ ok: false, text: d2.error || 'No se pudo guardar la capacidad' });
+      setMsg({ ok: false, text: d2.error || 'No se pudo guardar la capacidad.' });
       return;
     }
-    setMsg({ ok: true, text: 'Guardado para ambas cabañas' });
+    setMsg({ ok: true, text: parte === 'cobros' ? 'Cobros guardados.' : 'Capacidad guardada.' });
   }
 
-  // Ejemplo con el precio base actual para que se vea cuánto suma cada adicional
+  // Lo que suma cada tipo por noche con el precio base actual
   const base = precioBase ?? 0;
-  const ejemplo = (tipo: TipoHuesped) => {
+  const sumaPorNoche = (tipo: TipoHuesped) => {
     const v = Number(extras[tipo].valor || 0);
     const monto = extras[tipo].tipo === 'porcentaje' ? Math.round((base * v) / 100) : Math.round(v);
-    return `+$${monto.toLocaleString('es-CL')} por noche`;
+    return monto > 0 ? `+${fmtCLP(monto)}` : '—';
   };
 
+  // Vista previa: 2 noches (lunes a miércoles), 2 adultos y 1 mascota, con lo que está escrito en el formulario
+  const vistaPrevia = (() => {
+    if (!base) return null;
+    const extrasNum = Object.fromEntries(TIPOS.map(({ tipo }) => [tipo, { tipo: extras[tipo].tipo, valor: Number(extras[tipo].valor || 0) }])) as ExtrasHuespedes;
+    return calcularPrecioConConfig('2030-01-07', '2030-01-09', { precioBase: base, descuentos, precioFinSemana: null, tarifas: [], extras: extrasNum }, { adultos: 2, ninos: 0, bebes: 0, mascotas: 1 });
+  })();
+  const montoDe = (tipo: TipoHuesped) => vistaPrevia?.extrasDetalle.find((e) => e.tipo === tipo)?.monto ?? 0;
+
   return (
-    <form onSubmit={guardar} className={CARD}>
-      <div>
-        <h2 className="font-serif text-xl text-[#001f14]">Huéspedes adicionales y capacidad</h2>
-        <div className="text-[11px] text-[#8a8a8a] mt-1">
-          El precio por noche corresponde a 1 adulto. Cada adicional suma su monto por noche; puede ser un % del precio de esa noche o un valor fijo. Déjalo en 0 si no se cobra.
+    <>
+      <form className="panel" onSubmit={guardar} aria-label={parte === 'cobros' ? 'Cobros por huésped' : 'Capacidad por cabaña'}>
+        <h2>{parte === 'cobros' ? 'Cobros por huésped' : 'Capacidad por cabaña'}</h2>
+        <div className="sub" style={{ marginBottom: 16 }}>
+          {parte === 'cobros' ? 'El precio por noche cubre a 1 adulto. Cada extra se suma por noche.' : 'Máximo de personas y mascotas que acepta cada Tiny.'}
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-x-10 gap-y-5">
-        {TIPOS.map(({ tipo, titulo, detalle }) => (
-          <div key={tipo} className="grid grid-cols-1 sm:grid-cols-[1.2fr_1fr_1fr_1fr] gap-3 sm:items-end">
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-[#001f14]">{titulo}</span>
-              <span className="text-xs text-[#8a8a8a]">{detalle}</span>
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className={LABEL}>Tipo de cobro</label>
-              <select value={extras[tipo].tipo} onChange={(e) => setExtras({ ...extras, [tipo]: { ...extras[tipo], tipo: e.target.value as 'porcentaje' | 'monto' } })} className={INPUT}>
-                <option value="porcentaje">Porcentaje (%)</option>
-                <option value="monto">Valor fijo (CLP)</option>
-              </select>
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className={LABEL}>{extras[tipo].tipo === 'porcentaje' ? 'Porcentaje' : 'Monto por noche'}</label>
-              <input type="number" min={0} step={extras[tipo].tipo === 'porcentaje' ? 'any' : 1} inputMode="decimal" value={extras[tipo].valor} onChange={(e) => setExtras({ ...extras, [tipo]: { ...extras[tipo], valor: e.target.value } })} placeholder="0" className={INPUT} />
-            </div>
-            <div className="text-xs text-[#3a3a3a] pb-2">{base > 0 ? ejemplo(tipo) : ''}</div>
+        {parte === 'cobros' && (
+          <div className="tbl-wrap">
+            <table className="tbl">
+              <thead>
+                <tr><th>Quién</th><th>Cobro</th><th>Valor</th><th className="nw" style={{ textAlign: 'right' }}>Suma por noche</th></tr>
+              </thead>
+              <tbody>
+                {TIPOS.map(({ tipo, titulo, detalle }) => (
+                  <tr key={tipo}>
+                    <td><b>{titulo}</b><small>{detalle}</small></td>
+                    <td style={{ minWidth: 150 }}>
+                      <select aria-label={`Tipo de cobro: ${titulo}`} value={extras[tipo].tipo} onChange={(e) => setExtras({ ...extras, [tipo]: { ...extras[tipo], tipo: e.target.value as 'porcentaje' | 'monto' } })}>
+                        <option value="porcentaje">Porcentaje (%)</option>
+                        <option value="monto">Valor fijo ($)</option>
+                      </select>
+                    </td>
+                    <td style={{ minWidth: 110 }}>
+                      <input aria-label={`Valor: ${titulo}`} type="number" min={0} step={extras[tipo].tipo === 'porcentaje' ? 'any' : 1} inputMode="decimal" value={extras[tipo].valor} onChange={(e) => setExtras({ ...extras, [tipo]: { ...extras[tipo], valor: e.target.value } })} placeholder="0" />
+                    </td>
+                    <td className="num nw">{base > 0 ? sumaPorNoche(tipo) : '—'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        ))}
-      </div>
+        )}
 
-      <div className="h-px bg-[#eee7da]" />
-      <div className="text-sm font-semibold text-[#001f14]">Capacidad máxima por cabaña</div>
-      <div className="text-[11px] text-[#8a8a8a] -mt-2">El total de adultos + niños no puede superar el primer valor (los bebés no cuentan en el total); además cada tipo tiene su propio máximo. Ej.: total 4, adultos 3, niños 1, bebés 1.</div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        {CABANAS.map(({ id, label }) => (
-          <div key={id} className="flex flex-col gap-3">
-            <span className="text-sm font-semibold text-[#001f14]">Tiny House {label}</span>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {CAP_CAMPOS.map(({ campo, label, min }) => (
-                <div key={campo} className="flex flex-col gap-1">
-                  <label className={LABEL}>{label}</label>
-                  <input type="number" min={min} step={1} inputMode="numeric" value={cap[id][campo]} onChange={(e) => setCap({ ...cap, [id]: { ...cap[id], [campo]: e.target.value } })} className={INPUT} />
-                </div>
-              ))}
+        {parte === 'capacidad' && (
+          <>
+            <div className="tbl-wrap">
+              <table className="tbl">
+                <thead>
+                  <tr><th>Cabaña</th>{CAP_CAMPOS.map((c) => <th key={c.campo}>{c.label}</th>)}</tr>
+                </thead>
+                <tbody>
+                  {CABANAS.map(({ id, label }) => (
+                    <tr key={id}>
+                      <td className="nw"><b>Tiny {label}</b></td>
+                      {CAP_CAMPOS.map(({ campo, label: etiqueta, min }) => (
+                        <td key={campo} style={{ minWidth: 90 }}>
+                          <input aria-label={`${etiqueta} en ${label}`} type="number" min={min} step={1} inputMode="numeric" value={cap[id][campo]} onChange={(e) => setCap({ ...cap, [id]: { ...cap[id], [campo]: e.target.value } })} />
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </div>
-        ))}
-      </div>
+            <p className="nota" style={{ marginTop: 10 }}>Huéspedes cuenta adultos y niños juntos. Los bebés no suman.</p>
+          </>
+        )}
 
-      <div className="text-[11px] text-[#8a8a8a]">
-        Ejemplo: con precio por noche de ${base.toLocaleString('es-CL')} y 2 adultos, el total por noche = precio + adicional de 1 adulto
-        {hayDescuentos ? '; después se aplica el descuento por noches sobre todo' : ''}.
-      </div>
-      <div className="flex items-center gap-4 flex-wrap">
-        <button type="submit" disabled={guardando} className={BTN}>{guardando ? 'Guardando…' : 'Guardar'}</button>
-        {msg && <div className={`text-sm ${msg.ok ? 'text-[#163428]' : 'text-red-600'}`}>{msg.text}</div>}
-      </div>
-    </form>
+        <div className="foot">
+          <button type="submit" className="btn pri" disabled={guardando}>{guardando ? 'Guardando…' : parte === 'cobros' ? 'Guardar cobros' : 'Guardar capacidad'}</button>
+          {msg && <span className={msg.ok ? 'msg-ok' : 'msg-err'} role={msg.ok ? 'status' : 'alert'}>{msg.text}</span>}
+        </div>
+      </form>
+
+      {parte === 'cobros' && vistaPrevia && (
+        <aside className="preview" aria-label="Vista previa para el huésped">
+          <h2>Así lo verá el huésped</h2>
+          <div className="sub" style={{ marginBottom: 12 }}>2 noches, 2 adultos y 1 mascota.</div>
+          <div className="pl"><span>2 noches</span><span>{fmtCLP(vistaPrevia.subtotalNoches)}</span></div>
+          {montoDe('adulto') > 0 && <div className="pl"><span>Adulto adicional</span><span>{fmtCLP(montoDe('adulto'))}</span></div>}
+          {montoDe('mascota') > 0 && <div className="pl"><span>Mascota</span><span>{fmtCLP(montoDe('mascota'))}</span></div>}
+          {vistaPrevia.descuento > 0 && <div className="pl"><span>Descuento por 2 noches ({vistaPrevia.descuentoPct} %)</span><span>−{fmtCLP(vistaPrevia.descuento)}</span></div>}
+          <div className="pl tot"><span>Total a pagar</span><span>{fmtCLP(vistaPrevia.total)}</span></div>
+        </aside>
+      )}
+    </>
   );
 }

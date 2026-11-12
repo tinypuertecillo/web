@@ -2,12 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 
-const INPUT = 'border-0 border-b-2 border-[#dcd0bf] py-1.5 px-0.5 text-sm bg-transparent outline-none focus:border-[#001f14] w-full';
-const LABEL = 'text-[10px] uppercase tracking-wide text-secondary font-bold';
-const CARD = 'w-full bg-white rounded-2xl p-5 shadow-[0_20px_40px_rgba(29,27,22,0.05)] flex flex-col gap-3';
-
 const fmtCLP = (n: number) => (n < 0 ? '−$' : '$') + Math.abs(Math.round(n)).toLocaleString('es-CL');
-const fmtPct = (n: number) => n.toLocaleString('es-CL', { maximumFractionDigits: 1 }) + '%';
+const fmtPct = (n: number) => n.toLocaleString('es-CL', { maximumFractionDigits: 1 }) + ' %';
 
 type TipoCosto = 'noche' | 'reserva' | 'pct';
 type Costo = { id: number; concepto: string; tipo: TipoCosto; valor: string };
@@ -101,131 +97,96 @@ export default function CalculadoraUtilidad({ precioBase }: { precioBase: number
   const quitar = (id: number) => setCostos((l) => l.filter((c) => c.id !== id));
   const montoDeCosto = (c: Costo) => (c.tipo === 'pct' ? ingreso * (num(c.valor) / 100) : montoFijo(c));
 
-  const color = (v: number) => (v >= 0 ? 'text-[#163428]' : 'text-red-600');
+  const tono = (v: number) => (v >= 0 ? 'pos' : 'neg');
 
   return (
-    <div className={CARD}>
-      <div>
-        <h2 className="font-serif text-lg text-[#001f14]">Calculadora de ganancia neta</h2>
-        <div className="text-[11px] text-[#8a8a8a] mt-0.5">
-          Descuenta IVA, costos e impuesto a la renta. No cambia los precios del sitio; lo que escribes queda solo en este navegador.
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="flex flex-col gap-0.5 col-span-2 sm:col-span-1">
-          <label className={LABEL}>Arriendo por noche</label>
-          <input type="number" min={0} step={1} inputMode="numeric" value={precio} onChange={(e) => setPrecio(e.target.value)} placeholder={precioBase ? String(precioBase) : 'CLP'} className={INPUT} />
-        </div>
-        <div className="flex flex-col gap-0.5">
-          <label className={LABEL}>Noches</label>
-          <input type="number" min={1} step={1} inputMode="numeric" value={noches} onChange={(e) => setNoches(e.target.value)} className={INPUT} />
-        </div>
-        <div className="flex flex-col gap-0.5">
-          <label className={LABEL}>IVA incluido (%)</label>
-          <input type="number" min={0} max={100} step="any" inputMode="decimal" value={iva} onChange={(e) => setIva(e.target.value)} placeholder="19" className={INPUT} />
-        </div>
-        <div className="flex flex-col gap-0.5">
-          <label className={LABEL}>Renta (% utilidad)</label>
-          <input type="number" min={0} max={99} step="any" inputMode="decimal" value={renta} onChange={(e) => setRenta(e.target.value)} placeholder="Opcional" className={INPUT} />
-        </div>
-      </div>
-      {precio !== '' && precioBase !== null && (
-        <button type="button" onClick={() => setPrecio('')} className="text-[11px] underline text-[#8a8a8a] text-left -mt-1">Usar el precio base del sitio ({fmtCLP(precioBase)})</button>
-      )}
-
-      <div className="flex flex-col gap-1.5">
-        <div className={LABEL}>Costos</div>
-        {costos.length === 0 && <div className="text-xs text-[#8a8a8a]">Aún no hay costos. Agrega los tuyos (limpieza, lavado, gas, comisiones…).</div>}
-        {costos.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[520px]">
-              <thead>
-                <tr className="text-left text-[10px] uppercase tracking-wide text-secondary">
-                  <th className="font-bold pb-1 pr-2">Concepto</th>
-                  <th className="font-bold pb-1 pr-2 w-36">Tipo</th>
-                  <th className="font-bold pb-1 pr-2 w-24">Valor</th>
-                  <th className="font-bold pb-1 pr-2 text-right w-24">En la estadía</th>
-                  <th className="w-12" />
-                </tr>
-              </thead>
-              <tbody>
-                {costos.map((c) => (
-                  <tr key={c.id} className="border-t border-[#eee7da]">
-                    <td className="py-1 pr-2"><input type="text" value={c.concepto} onChange={(e) => cambiar(c.id, 'concepto', e.target.value)} placeholder="Ej: Limpieza" className={INPUT} /></td>
-                    <td className="py-1 pr-2">
-                      <select value={c.tipo} onChange={(e) => cambiar(c.id, 'tipo', e.target.value)} className={INPUT}>
-                        <option value="noche">$ por noche</option>
-                        <option value="reserva">$ por reserva</option>
-                        <option value="pct">% del arriendo</option>
-                      </select>
-                    </td>
-                    <td className="py-1 pr-2"><input type="number" min={0} step="any" inputMode="decimal" value={c.valor} onChange={(e) => cambiar(c.id, 'valor', e.target.value)} placeholder={c.tipo === 'pct' ? '%' : 'CLP'} className={INPUT} /></td>
-                    <td className="py-1 pr-2 text-right font-semibold text-[#3a3a3a]">{fmtCLP(montoDeCosto(c))}</td>
-                    <td className="py-1 text-right"><button type="button" onClick={() => quitar(c.id)} className="text-xs text-red-600 underline font-semibold">Quitar</button></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+    <div className="cols2">
+      <section className="panel" aria-label="Datos de la calculadora">
+        <h2>Calculadora de ganancia</h2>
+        <div className="sub" style={{ marginBottom: 18 }}>No cambia los precios del sitio. Lo que escribes queda solo en este navegador.</div>
+        <div className="stk" style={{ gap: 18 }}>
+          <div className="fields">
+            <div className="field"><label htmlFor="k-p">Arriendo por noche</label><div className="inp"><span>$</span><input id="k-p" type="number" min={0} step={1} inputMode="numeric" value={precio} onChange={(e) => setPrecio(e.target.value)} placeholder={precioBase ? String(precioBase) : ''} /></div></div>
+            <div className="field"><label htmlFor="k-n">Noches</label><div className="inp"><input id="k-n" type="number" min={1} step={1} inputMode="numeric" value={noches} onChange={(e) => setNoches(e.target.value)} /></div></div>
+            <div className="field"><label htmlFor="k-i">IVA incluido (%)</label><div className="inp"><input id="k-i" type="number" min={0} max={100} step="any" inputMode="decimal" value={iva} onChange={(e) => setIva(e.target.value)} placeholder="19" /></div></div>
+            <div className="field"><label htmlFor="k-r">Renta (% utilidad)</label><div className="inp"><input id="k-r" type="number" min={0} max={99} step="any" inputMode="decimal" value={renta} onChange={(e) => setRenta(e.target.value)} placeholder="Opcional" /></div></div>
           </div>
-        )}
-        <div>
-          <button type="button" onClick={agregar} className="rounded-lg py-2 px-4 text-sm font-semibold bg-[#eee7da] text-[#3a3a3a] hover:bg-[#e5dbcd]">+ Agregar costo</button>
-        </div>
-      </div>
+          {precio !== '' && precioBase !== null && (
+            <div><button type="button" className="link" onClick={() => setPrecio('')}>Usar el precio base del sitio ({fmtCLP(precioBase)})</button></div>
+          )}
 
-      <div className="bg-[#f8f4ec] rounded-xl p-4 flex flex-col gap-1.5 text-sm text-[#3a3a3a]">
-        <div className="flex justify-between"><span>Arriendo cobrado ({n} {n === 1 ? 'noche' : 'noches'}, con IVA)</span><span className="font-semibold">{fmtCLP(r0.bruto)}</span></div>
-        <div className="flex justify-between"><span>− IVA a pagar ({fmtPct(ivaPct)})</span><span className="font-semibold">{fmtCLP(r0.ivaPagar)}</span></div>
-        <div className="flex justify-between"><span>= Arriendo neto (sin IVA)</span><span className="font-semibold">{fmtCLP(r0.neto)}</span></div>
-        <div className="flex justify-between"><span>− Costos</span><span className="font-semibold">{fmtCLP(r0.costosTotal)}</span></div>
-        {rentaPct > 0 && <div className="flex justify-between"><span>− Impuesto a la renta ({fmtPct(rentaPct)})</span><span className="font-semibold">{fmtCLP(r0.impRenta)}</span></div>}
-        <div className="h-px bg-[#e5dbcd] my-0.5" />
-        <div className="flex justify-between items-baseline">
-          <span className="font-serif text-base text-[#001f14]">Ganancia neta</span>
-          <span className={`font-serif text-xl font-semibold ${color(r0.ganancia)}`}>{fmtCLP(r0.ganancia)}</span>
-        </div>
-        <div className="flex justify-between text-xs text-[#8a8a8a]">
-          <span>Margen neto sobre el arriendo sin IVA</span>
-          <span className={`font-semibold ${color(r0.margen)}`}>{fmtPct(r0.margen)}</span>
-        </div>
-        <div className="flex justify-between text-xs text-[#8a8a8a]"><span>Ganancia neta por noche</span><span className="font-semibold">{fmtCLP(r0.ganancia / n)}</span></div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-start">
-        <div className="border border-[#eee7da] rounded-xl p-4 flex flex-col gap-2">
-          <div className="font-serif text-base text-[#001f14]">¿Y si doy un descuento?</div>
-          <div className="flex flex-col gap-0.5">
-            <label className={LABEL}>Descuento a probar (%)</label>
-            <input type="number" min={0} max={99} step="any" inputMode="decimal" value={descuento} onChange={(e) => setDescuento(e.target.value)} placeholder="Ej: 10" className={INPUT} />
+          <div>
+            <div className="h3">Costos</div>
+            {costos.length === 0 ? (
+              <p className="nota">Agrega tus costos: limpieza, lavado, gas, comisiones.</p>
+            ) : (
+              <div className="tbl-wrap">
+                <table className="tbl">
+                  <thead><tr><th>Concepto</th><th>Tipo</th><th>Valor</th><th style={{ textAlign: 'right' }}>En la estadía</th><th /></tr></thead>
+                  <tbody>
+                    {costos.map((c) => (
+                      <tr key={c.id}>
+                        <td style={{ minWidth: 130 }}><input aria-label="Concepto del costo" type="text" value={c.concepto} onChange={(e) => cambiar(c.id, 'concepto', e.target.value)} placeholder="Limpieza" /></td>
+                        <td style={{ minWidth: 140 }}>
+                          <select aria-label="Tipo de costo" value={c.tipo} onChange={(e) => cambiar(c.id, 'tipo', e.target.value)}>
+                            <option value="noche">$ por noche</option>
+                            <option value="reserva">$ por reserva</option>
+                            <option value="pct">% del arriendo</option>
+                          </select>
+                        </td>
+                        <td style={{ minWidth: 100 }}><input aria-label="Valor del costo" type="number" min={0} step="any" inputMode="decimal" value={c.valor} onChange={(e) => cambiar(c.id, 'valor', e.target.value)} placeholder={c.tipo === 'pct' ? '%' : '$'} /></td>
+                        <td className="num nw">{fmtCLP(montoDeCosto(c))}</td>
+                        <td style={{ textAlign: 'right' }}><button type="button" className="btn sm danger" onClick={() => quitar(c.id)}>Quitar</button></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <div style={{ marginTop: 12 }}><button type="button" className="btn sm" onClick={agregar}>Agregar costo</button></div>
           </div>
+        </div>
+      </section>
+
+      <div className="stk" style={{ gap: 24 }}>
+        <section className="panel" aria-label="Resultado">
+          <h2>Resultado</h2>
+          <div className="res" style={{ marginTop: 10 }}><span>Arriendo cobrado ({n} {n === 1 ? 'noche' : 'noches'}, con IVA)</span><span>{fmtCLP(r0.bruto)}</span></div>
+          <div className="res"><span>IVA a pagar ({fmtPct(ivaPct)})</span><span>−{fmtCLP(r0.ivaPagar)}</span></div>
+          <div className="res"><span>Arriendo neto, sin IVA</span><span>{fmtCLP(r0.neto)}</span></div>
+          <div className="res"><span>Costos</span><span>−{fmtCLP(r0.costosTotal)}</span></div>
+          {rentaPct > 0 && <div className="res"><span>Impuesto a la renta ({fmtPct(rentaPct)})</span><span>−{fmtCLP(r0.impRenta)}</span></div>}
+          <div className="res tot"><span>Ganancia neta</span><span className={tono(r0.ganancia)}>{fmtCLP(r0.ganancia)}</span></div>
+          <div className="res"><span>Margen sobre el arriendo sin IVA</span><span className={tono(r0.margen)}>{fmtPct(r0.margen)}</span></div>
+          <div className="res"><span>Ganancia neta por noche</span><span>{fmtCLP(r0.ganancia / n)}</span></div>
+        </section>
+
+        <section className="panel" aria-label="Probar un descuento">
+          <h2>¿Y si doy un descuento?</h2>
+          <div className="field" style={{ marginTop: 14, maxWidth: 240 }}><label htmlFor="k-d">Descuento a probar (%)</label><div className="inp"><input id="k-d" type="number" min={0} max={99} step="any" inputMode="decimal" value={descuento} onChange={(e) => setDescuento(e.target.value)} placeholder="10" /></div></div>
           {d > 0 && (
-            <div className="text-xs text-[#3a3a3a] flex flex-col gap-1">
-              <div className="flex justify-between"><span>Arriendo con descuento</span><span className="font-semibold">{fmtCLP(rd.bruto)}</span></div>
-              <div className="flex justify-between"><span>Ganancia neta</span><span className={`font-semibold ${color(rd.ganancia)}`}>{fmtCLP(rd.ganancia)}</span></div>
-              <div className="flex justify-between"><span>Margen neto</span><span className={`font-semibold ${color(rd.margen)}`}>{fmtPct(rd.margen)}</span></div>
-              <div className="flex justify-between"><span>Dejas de ganar</span><span className="font-semibold">{fmtCLP(r0.ganancia - rd.ganancia)}</span></div>
+            <div style={{ marginTop: 10 }}>
+              <div className="res"><span>Arriendo con descuento</span><span>{fmtCLP(rd.bruto)}</span></div>
+              <div className="res"><span>Ganancia neta</span><span className={tono(rd.ganancia)}>{fmtCLP(rd.ganancia)}</span></div>
+              <div className="res"><span>Margen neto</span><span className={tono(rd.margen)}>{fmtPct(rd.margen)}</span></div>
+              <div className="res"><span>Dejas de ganar</span><span>{fmtCLP(r0.ganancia - rd.ganancia)}</span></div>
             </div>
           )}
-        </div>
-
-        <div className="border border-[#eee7da] rounded-xl p-4 flex flex-col gap-2">
-          <div className="font-serif text-base text-[#001f14]">Descuento máximo</div>
-          <div className="flex flex-col gap-0.5">
-            <label className={LABEL}>Ganancia neta mínima (CLP)</label>
-            <input type="number" min={0} step={1} inputMode="numeric" value={meta} onChange={(e) => setMeta(e.target.value)} placeholder="Vacío = no perder" className={INPUT} />
+          <div className="h3" style={{ marginTop: 22 }}>Descuento máximo</div>
+          <div className="field" style={{ maxWidth: 240 }}><label htmlFor="k-m">Ganancia neta mínima</label><div className="inp"><span>$</span><input id="k-m" type="number" min={0} step={1} inputMode="numeric" value={meta} onChange={(e) => setMeta(e.target.value)} placeholder="Vacío = no perder" /></div></div>
+          <div style={{ marginTop: 10 }}>
+            {maxMostrado === null ? (
+              <p className="nota">Escribe el arriendo y los costos para calcularlo.</p>
+            ) : maxMostrado <= 0 ? (
+              <p className="msg-err">Con estos costos no hay espacio para dar descuento y ganar eso.</p>
+            ) : (
+              <>
+                <div className="res"><span>Puedes dar hasta</span><span className="pos"><b>{fmtPct(maxMostrado)}</b></span></div>
+                <p className="nota">Arriendo final: {fmtCLP(ingreso * (1 - maxMostrado / 100))}, con {fmtCLP(metaNeta)} netos o más.</p>
+              </>
+            )}
           </div>
-          {maxMostrado === null ? (
-            <div className="text-xs text-[#8a8a8a]">Escribe el arriendo y los costos para calcularlo.</div>
-          ) : maxMostrado <= 0 ? (
-            <div className="text-xs text-red-600 font-semibold">Con estos costos no hay espacio para dar descuento y ganar eso.</div>
-          ) : (
-            <div className="text-xs text-[#3a3a3a]">
-              Hasta <span className="font-serif text-xl font-semibold text-[#163428]">{fmtPct(maxMostrado)}</span> y ganas {fmtCLP(metaNeta)} netos o más.
-              <div className="text-[11px] text-[#8a8a8a] mt-0.5">Arriendo final: {fmtCLP(ingreso * (1 - maxMostrado / 100))}.</div>
-            </div>
-          )}
-        </div>
+        </section>
       </div>
     </div>
   );

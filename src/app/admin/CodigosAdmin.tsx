@@ -2,11 +2,6 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 
-const INPUT = 'border-0 border-b-2 border-[#dcd0bf] py-2 px-0.5 text-sm bg-transparent outline-none focus:border-[#001f14] w-full';
-const LABEL = 'text-[11px] uppercase tracking-wide text-secondary font-bold';
-const CARD = 'w-full bg-white rounded-2xl p-7 shadow-[0_20px_40px_rgba(29,27,22,0.05)] flex flex-col gap-4';
-const BTN = 'rounded-lg py-3.5 px-6 text-[15px] font-semibold bg-[#163428] text-white hover:opacity-90 transition-opacity disabled:opacity-50';
-
 type Codigo = {
   id: string;
   codigo: string;
@@ -30,10 +25,10 @@ const fmtCreado = (iso: string) => {
 };
 
 function estadoDe(c: Codigo, hoy: string): { texto: string; clase: string } {
-  if (!c.activo) return { texto: 'Desactivado', clase: 'bg-[#eee7da] text-[#8a8a8a]' };
-  if (c.usos >= c.usos_max) return { texto: 'Usado', clase: 'bg-[#eee7da] text-[#3a3a3a]' };
-  if (c.valido_hasta < hoy) return { texto: 'Vencido', clase: 'bg-red-50 text-red-700' };
-  return { texto: 'Vigente', clase: 'bg-[#e4efe9] text-[#163428]' };
+  if (!c.activo) return { texto: 'Desactivado', clase: 'no' };
+  if (c.usos >= c.usos_max) return { texto: 'Usado', clase: 'no' };
+  if (c.valido_hasta < hoy) return { texto: 'Vencido', clase: 'bad' };
+  return { texto: 'Vigente', clase: 'ok' };
 }
 
 // Mensaje con formato fijo para enviar el código a la persona.
@@ -55,8 +50,7 @@ function leerFormulario() {
   }
 }
 
-// Se mantiene montado siempre y muestra solo cuando la pestaña está activa.
-export default function CodigosAdmin({ visible }: { visible: boolean }) {
+export default function CodigosAdmin() {
   const [inicial] = useState(leerFormulario);
   const [codigos, setCodigos] = useState<Codigo[]>([]);
   const [hoy, setHoy] = useState('');
@@ -80,7 +74,7 @@ export default function CodigosAdmin({ visible }: { visible: boolean }) {
 
   const mostrar = useCallback((ok: boolean, data: { codigos?: Codigo[]; hoy?: string; error?: string }) => {
     if (!ok) {
-      setAviso({ ok: false, text: data.error || 'No se pudieron cargar los códigos' });
+      setAviso({ ok: false, text: data.error || 'No se pudieron cargar los códigos.' });
       return;
     }
     setCodigos(data.codigos || []);
@@ -94,9 +88,8 @@ export default function CodigosAdmin({ visible }: { visible: boolean }) {
     mostrar(res.ok, await res.json().catch(() => ({})));
   }, [mostrar]);
 
-  // Primera carga: solo cuando se abre la pestaña por primera vez
+  // Primera carga al abrir el tema
   useEffect(() => {
-    if (!visible || cargado) return;
     let cancelado = false;
     fetch('/api/admin/codigos')
       .then(async (res) => ({ ok: res.ok, data: await res.json().catch(() => ({})) }))
@@ -104,12 +97,12 @@ export default function CodigosAdmin({ visible }: { visible: boolean }) {
         if (!cancelado) mostrar(ok, data);
       })
       .catch(() => {
-        if (!cancelado) setAviso({ ok: false, text: 'No se pudieron cargar los códigos' });
+        if (!cancelado) setAviso({ ok: false, text: 'No se pudieron cargar los códigos.' });
       });
     return () => {
       cancelado = true;
     };
-  }, [visible, cargado, mostrar]);
+  }, [mostrar]);
 
   async function generar(e: React.FormEvent) {
     e.preventDefault();
@@ -117,15 +110,15 @@ export default function CodigosAdmin({ visible }: { visible: boolean }) {
     setNuevo(null);
     const pct = Number(porcentaje);
     if (!celular.trim()) {
-      setAviso({ ok: false, text: 'Escribe el celular de la persona' });
+      setAviso({ ok: false, text: 'Escribe el celular de la persona.' });
       return;
     }
     if (!Number.isFinite(pct) || pct <= 0 || pct >= 100) {
-      setAviso({ ok: false, text: 'Escribe un porcentaje mayor a 0 y menor a 100' });
+      setAviso({ ok: false, text: 'El descuento debe ser mayor a 0 y menor a 100.' });
       return;
     }
     if (!validoHasta) {
-      setAviso({ ok: false, text: 'Elige hasta qué día vale el código' });
+      setAviso({ ok: false, text: 'Elige hasta qué día vale el código.' });
       return;
     }
     setGuardando(true);
@@ -142,13 +135,13 @@ export default function CodigosAdmin({ visible }: { visible: boolean }) {
       return;
     }
     if (!res.ok) {
-      setAviso({ ok: false, text: data.error || 'No se pudo generar el código' });
+      setAviso({ ok: false, text: data.error || 'No se pudo generar el código.' });
       return;
     }
     setNuevo(data.codigo);
     setCelular('');
     setNota('');
-    setAviso({ ok: true, text: 'Código generado' });
+    setAviso({ ok: true, text: 'Código generado.' });
     cargar();
   }
 
@@ -158,11 +151,11 @@ export default function CodigosAdmin({ visible }: { visible: boolean }) {
     const res = await fetch(`/api/admin/codigos?id=${encodeURIComponent(c.id)}`, { method: 'DELETE' });
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      setAviso({ ok: false, text: data.error || 'No se pudo eliminar el código' });
+      setAviso({ ok: false, text: data.error || 'No se pudo eliminar el código.' });
       return;
     }
     if (nuevo?.id === c.id) setNuevo(null);
-    setAviso({ ok: true, text: `Código ${c.codigo} eliminado` });
+    setAviso({ ok: true, text: `Código ${c.codigo} eliminado.` });
     cargar();
   }
 
@@ -177,102 +170,66 @@ export default function CodigosAdmin({ visible }: { visible: boolean }) {
   }
 
   return (
-    <div className={`flex flex-col gap-8 min-w-0 ${visible ? '' : 'hidden'}`}>
-      <div className="flex flex-col gap-6 min-w-0">
-        <form onSubmit={generar} className={CARD}>
-          <div>
-            <h2 className="font-serif text-xl text-[#001f14]">Código para un huésped</h2>
-            <div className="text-[11px] text-[#8a8a8a] mt-1">
-              Cuando alguien comente TINY, pídele su celular y genera su código aquí. Solo funciona al reservar con ese mismo celular y se puede usar una vez.
+    <div className="stk" style={{ gap: 24 }}>
+      <div className="cols2">
+        <form className="panel" onSubmit={generar} aria-label="Código para un huésped">
+          <h2>Código para un huésped</h2>
+          <div className="sub" style={{ marginBottom: 16 }}>Se usa una vez y solo con ese celular.</div>
+          <div className="stk" style={{ gap: 14 }}>
+            <div className="field"><label htmlFor="c-cel">Celular</label><div className="inp"><input id="c-cel" type="tel" inputMode="tel" value={celular} onChange={(e) => setCelular(e.target.value)} placeholder="+56 9 1234 5678" /></div></div>
+            <div className="field"><label htmlFor="c-nom">Nombre o usuario (opcional)</label><div className="inp"><input id="c-nom" type="text" value={nota} onChange={(e) => setNota(e.target.value)} placeholder="@usuario de Instagram" /></div></div>
+            <div className="fields">
+              <div className="field"><label htmlFor="c-pct">Descuento (%)</label><div className="inp"><input id="c-pct" type="number" min={1} max={99} step="any" inputMode="decimal" value={porcentaje} onChange={(e) => setPorcentaje(e.target.value)} placeholder="10" /></div></div>
+              <div className="field"><label htmlFor="c-hasta">Vale hasta</label><div className="inp"><input id="c-hasta" type="date" value={validoHasta} min={hoy || undefined} onChange={(e) => setValidoHasta(e.target.value)} /></div></div>
+            </div>
+            <div className="foot" style={{ marginTop: 0 }}>
+              <button type="submit" className="btn pri" disabled={guardando}>{guardando ? 'Generando…' : 'Generar código'}</button>
+              {aviso && <span className={aviso.ok ? 'msg-ok' : 'msg-err'} role={aviso.ok ? 'status' : 'alert'}>{aviso.text}</span>}
             </div>
           </div>
-          <div className="flex flex-col gap-1">
-            <label className={LABEL}>Celular de la persona</label>
-            <input type="tel" inputMode="tel" value={celular} onChange={(e) => setCelular(e.target.value)} placeholder="+56 9 1234 5678" className={INPUT} />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className={LABEL}>Nombre o usuario (opcional)</label>
-            <input type="text" value={nota} onChange={(e) => setNota(e.target.value)} placeholder="Ej: @usuario de Instagram" className={INPUT} />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex flex-col gap-1">
-              <label className={LABEL}>Descuento (%)</label>
-              <input type="number" min={1} max={99} step="any" inputMode="decimal" value={porcentaje} onChange={(e) => setPorcentaje(e.target.value)} placeholder="Ej: 10" className={INPUT} />
-            </div>
-            <div className="flex flex-col gap-1">
-              <label className={LABEL}>Vale hasta</label>
-              <input type="date" value={validoHasta} min={hoy || undefined} onChange={(e) => setValidoHasta(e.target.value)} className={INPUT} />
-            </div>
-          </div>
-          <div className="text-[11px] text-[#8a8a8a]">El porcentaje y la fecha quedan recordados para el siguiente código. Si el celular ya tiene un código vigente sin usar, no se crea otro.</div>
-          {aviso && <div className={`text-sm ${aviso.ok ? 'text-[#163428]' : 'text-red-600'}`}>{aviso.text}</div>}
-          <button type="submit" disabled={guardando} className={BTN}>
-            {guardando ? 'Generando…' : 'Generar código'}
-          </button>
         </form>
 
         {nuevo && (
-          <div className={CARD}>
-            <h2 className="font-serif text-xl text-[#001f14]">Código listo para enviar</h2>
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              <span className="font-mono text-xl font-bold text-[#001f14] tracking-wide">{nuevo.codigo}</span>
-              <span className="text-xs text-[#3a3a3a]">{nuevo.porcentaje}% · hasta {fmtFecha(nuevo.valido_hasta)} · {fmtCelular(nuevo.celular)}</span>
+          <section className="panel" aria-label="Código listo para enviar">
+            <h2>Código listo</h2>
+            <div style={{ margin: '12px 0 4px' }} className="code">{nuevo.codigo}</div>
+            <div className="sub" style={{ marginBottom: 14 }}>{nuevo.porcentaje} %, hasta {fmtFecha(nuevo.valido_hasta)}, {fmtCelular(nuevo.celular)}</div>
+            <div className="msg">{mensajeDe(nuevo)}</div>
+            <div className="foot">
+              <button type="button" className="btn pri" onClick={() => copiar(mensajeDe(nuevo), 'n')}>{copiado === 'n' ? 'Mensaje copiado' : 'Copiar mensaje'}</button>
+              {enlaceWhatsApp(nuevo) && <a className="btn" href={enlaceWhatsApp(nuevo)} target="_blank" rel="noopener noreferrer">Abrir en WhatsApp</a>}
             </div>
-            <div className="text-xs text-[#3a3a3a] bg-[#f8f4ec] rounded-md p-3">{mensajeDe(nuevo)}</div>
-            <div className="flex gap-4 flex-wrap">
-              {enlaceWhatsApp(nuevo) && (
-                <a href={enlaceWhatsApp(nuevo)} target="_blank" rel="noopener noreferrer" className="text-xs underline font-semibold text-[#163428]">Abrir en WhatsApp</a>
-              )}
-              <button type="button" onClick={() => copiar(mensajeDe(nuevo), 'n')} className="text-xs underline font-semibold text-[#163428]">
-                {copiado === 'n' ? 'Mensaje copiado' : 'Copiar mensaje'}
-              </button>
-            </div>
-          </div>
+          </section>
         )}
       </div>
 
-      <div className={`${CARD} min-w-0`}>
-        <h2 className="font-serif text-xl text-[#001f14]">Códigos pedidos</h2>
-        {!cargado && !aviso && <div className="text-sm text-[#8a8a8a]">Cargando…</div>}
-        {cargado && codigos.length === 0 && <div className="text-sm text-[#8a8a8a]">Todavía no hay códigos.</div>}
+      <section className="panel" aria-label="Códigos pedidos">
+        <h2>Códigos pedidos</h2>
+        {!cargado && !aviso && <div className="sub" style={{ marginTop: 6 }}>Cargando…</div>}
+        {cargado && codigos.length === 0 && <div className="sub" style={{ marginTop: 6 }}>Todavía no hay códigos. Genera el primero con el formulario.</div>}
         {codigos.length > 0 && (
-          <div className="overflow-x-auto max-h-[640px] overflow-y-auto">
-            <table className="w-full text-sm min-w-[560px]">
+          <div className="tbl-wrap" style={{ maxHeight: 640, overflowY: 'auto', marginTop: 10 }}>
+            <table className="tbl">
               <thead>
-                <tr className="text-left text-[10px] uppercase tracking-wide text-secondary">
-                  <th className="font-bold pb-2 pr-3">Pedido</th>
-                  <th className="font-bold pb-2 pr-3">Celular</th>
-                  <th className="font-bold pb-2 pr-3">Código</th>
-                  <th className="font-bold pb-2 pr-3">Descuento</th>
-                  <th className="font-bold pb-2 pr-3">Vence</th>
-                  <th className="font-bold pb-2 pr-3">Estado</th>
-                  <th className="font-bold pb-2">Acciones</th>
-                </tr>
+                <tr><th>Pedido</th><th>Celular</th><th>Código</th><th>Descuento</th><th>Vence</th><th>Estado</th><th /></tr>
               </thead>
               <tbody>
                 {codigos.map((c) => {
                   const est = estadoDe(c, hoy);
                   const wa = enlaceWhatsApp(c);
                   return (
-                    <tr key={c.id} className="border-t border-[#eee7da] align-top">
-                      <td className="py-2.5 pr-3 text-[#3a3a3a]">
-                        {fmtCreado(c.created_at)}
-                        {c.nota && <div className="text-[11px] text-[#8a8a8a] italic">{c.nota}</div>}
-                      </td>
-                      <td className="py-2.5 pr-3 whitespace-nowrap">{fmtCelular(c.celular)}</td>
-                      <td className="py-2.5 pr-3 font-mono font-bold text-[#001f14] whitespace-nowrap">{c.codigo}</td>
-                      <td className="py-2.5 pr-3">{c.porcentaje}%</td>
-                      <td className="py-2.5 pr-3 whitespace-nowrap">{fmtFecha(c.valido_hasta)}</td>
-                      <td className="py-2.5 pr-3"><span className={`text-[10px] font-bold uppercase tracking-wide rounded-full px-2.5 py-1 ${est.clase}`}>{est.texto}</span></td>
-                      <td className="py-2.5">
-                        <div className="flex flex-col items-start gap-1">
-                          {wa && <a href={wa} target="_blank" rel="noopener noreferrer" className="text-xs underline font-semibold text-[#163428]">WhatsApp</a>}
-                          <button type="button" onClick={() => copiar(mensajeDe(c), 'l' + c.id)} className="text-xs underline font-semibold text-[#163428]">
-                            {copiado === 'l' + c.id ? 'Copiado' : 'Copiar mensaje'}
-                          </button>
-                          <button type="button" onClick={() => eliminar(c)} className="text-xs underline font-semibold text-red-600">
-                            Eliminar
-                          </button>
+                    <tr key={c.id}>
+                      <td>{fmtCreado(c.created_at)}{c.nota && <small>{c.nota}</small>}</td>
+                      <td className="nw">{fmtCelular(c.celular)}</td>
+                      <td className="nw"><b>{c.codigo}</b></td>
+                      <td>{c.porcentaje} %</td>
+                      <td className="nw">{fmtFecha(c.valido_hasta)}</td>
+                      <td><span className={`chip ${est.clase}`}>{est.texto}</span></td>
+                      <td>
+                        <div className="acts" style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                          <button type="button" className="btn sm" onClick={() => copiar(mensajeDe(c), 'l' + c.id)}>{copiado === 'l' + c.id ? 'Copiado' : 'Copiar mensaje'}</button>
+                          {wa && <a className="btn sm" href={wa} target="_blank" rel="noopener noreferrer">WhatsApp</a>}
+                          <button type="button" className="btn sm danger" onClick={() => eliminar(c)}>Eliminar</button>
                         </div>
                       </td>
                     </tr>
@@ -282,7 +239,7 @@ export default function CodigosAdmin({ visible }: { visible: boolean }) {
             </table>
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }

@@ -656,6 +656,8 @@ export default function Home() {
               <img
                 alt="Tiny Puertecillo Hero"
                 className="w-full h-full object-cover"
+                fetchPriority="high"
+                decoding="async"
                 src={heroContent.background_image}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#001f14]/80 via-[#001f14]/30 to-transparent"></div>
@@ -802,7 +804,7 @@ export default function Home() {
             © 2026 Tiny Puertecillo SpA
           </p>
           <p className="text-xs font-label tracking-widest text-[#1d1b16] dark:text-[#f9f3ea] opacity-50 uppercase">
-            Architectural Retreats · Puertecillo, Chile
+            Refugios de arquitectura · Puertecillo, Chile
           </p>
                     <a href="/admin" className="text-xs font-label tracking-widest text-[#1d1b16] dark:text-[#f9f3ea] opacity-30 hover:opacity-70 transition-opacity uppercase">Admin</a>
         </div>
