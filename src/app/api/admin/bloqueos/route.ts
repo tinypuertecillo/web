@@ -129,21 +129,68 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   }
   const body = await req.json().catch(() => ({}));
-  const { id, huespedNombre, huespedTelefono, huespedEmail, notas } = body;
+  const { id, huespedNombre, huespedTelefono, huespedEmail, notas, cabanaId, fechaInicio, fechaFin } = body;
   if (!id) {
     return NextResponse.json({ error: "Falta id" }, { status: 400 });
   }
-  const { data, error } = await supabaseAdmin
-    .from("fechas_bloqueadas")
-    .update({
-      huesped_nombre: texto(huespedNombre, 120),
-      huesped_telefono: texto(huespedTelefono, 40),
-      huesped_email: texto(huespedEmail, 120),
-      notas: texto(notas, 300),
-    })
-    .eq("id", id)
-    .select()
-    .single();
+
+  const { data: actual, error: errActual } = await supabaseAdmin.from("fechas_bloqueadas").select("*").eq("id", id).maybeSingle();
+  if (errActual) {
+    console.error(`[admin/bloqueos] ${errActual.message}`);
+    return NextResponse.json({ error: "No se pudo revisar la reserva" }, { status: 500 });
+  }
+  if (!actual) {
+    return NextResponse.json({ error: "Esa reserva ya no existe" }, { status: 404 });
+  }
+
+  const cambio: Record<string, unknown> = {
+    huesped_nombre: texto(huespedNombre, 120),
+    huesped_telefono: texto(huespedTelefono, 40),
+    huesped_email: texto(huespedEmail, 120),
+    notas: texto(notas, 300),
+  };
+
+  // Cabaña, fechas y canal solo se cambian en reservas manuales (Airbnb, Booking, otro); las pagadas por la web no.
+  const quiereCambiarFechas = cabanaId !== undefined || fechaInicio !== undefined || fechaFin !== undefined || body.canal !== undefined;
+  if (quiereCambiarFechas) {
+    if (actual.canal === "web") {
+      return NextResponse.json({ error: "Las fechas de una reserva pagada por la web no se cambian desde aquí." }, { status: 400 });
+    }
+    const cabana = cabanaId ?? actual.cabana_id;
+    const ini = fechaInicio ?? actual.fecha_inicio;
+    const fin = fechaFin ?? actual.fecha_fin;
+    const canal = body.canal === undefined || body.canal === "" ? actual.canal : String(body.canal).toLowerCase();
+    if (cabana !== "naciente" && cabana !== "poniente") {
+      return NextResponse.json({ error: "Elige la cabaña" }, { status: 400 });
+    }
+    if (!esFechaValida(ini) || !esFechaValida(fin)) {
+      return NextResponse.json({ error: "Elige la fecha de inicio y la de fin" }, { status: 400 });
+    }
+    if (fin <= ini) {
+      return NextResponse.json({ error: "La fecha final debe ser posterior a la inicial" }, { status: 400 });
+    }
+    if (!CANALES_MANUALES.includes(canal)) {
+      return NextResponse.json({ error: "Canal no válido" }, { status: 400 });
+    }
+    const { data: choques, error: errChoques } = await supabaseAdmin
+      .from("fechas_bloqueadas")
+      .select("fecha_inicio, fecha_fin")
+      .eq("cabana_id", cabana)
+      .neq("id", id)
+      .lt("fecha_inicio", fin)
+      .gt("fecha_fin", ini);
+    if (errChoques) {
+      console.error(`[admin/bloqueos] ${errChoques.message}`);
+      return NextResponse.json({ error: "No se pudo revisar si esas fechas están libres. Intenta de nuevo." }, { status: 500 });
+    }
+    if (choques && choques.length > 0) {
+      const c = choques[0];
+      return NextResponse.json({ error: `Esas fechas se cruzan con otra reserva de la misma cabaña (del ${fmt(c.fecha_inicio)} al ${fmt(c.fecha_fin)}).` }, { status: 409 });
+    }
+    Object.assign(cambio, { cabana_id: cabana, fecha_inicio: ini, fecha_fin: fin, canal });
+  }
+
+  const { data, error } = await supabaseAdmin.from("fechas_bloqueadas").update(cambio).eq("id", id).select().single();
   if (error) {
     console.error(`[admin/bloqueos] ${error.message}`);
     return NextResponse.json({ error: "No se pudo guardar el cambio" }, { status: 500 });
