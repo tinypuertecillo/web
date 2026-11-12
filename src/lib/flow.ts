@@ -58,8 +58,10 @@ export async function createFlowPayment(opts: {
       email: string;
       urlConfirmation: string;
       urlReturn: string;
+      timeoutSegundos?: number; // la orden deja de poder pagarse pasado este tiempo
 }) {
       return flowRequest("/payment/create", {
+              ...(opts.timeoutSegundos ? { timeout: String(Math.round(opts.timeoutSegundos)) } : {}),
               commerceOrder: opts.commerceOrder,
               subject: opts.subject,
               currency: "CLP",

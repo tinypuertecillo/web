@@ -6,6 +6,7 @@ import SiteFooter from '@/components/SiteFooter';
 import TarifasAdmin, { type SeccionAdmin } from './TarifasAdmin';
 import CodigosAdmin from './CodigosAdmin';
 import CalculadoraUtilidad from './CalculadoraUtilidad';
+import ReservasAdmin from './ReservasAdmin';
 
 type Cabin = 'naciente' | 'poniente';
 
@@ -26,9 +27,10 @@ const CABIN_LABEL: Record<Cabin, string> = {
   poniente: 'Tiny House Poniente',
 };
 
-type Pestana = SeccionAdmin | 'disponibilidad';
+type Pestana = SeccionAdmin | 'disponibilidad' | 'reservas';
 
 const PESTANAS: { id: Pestana; titulo: string; detalle: string }[] = [
+  { id: 'reservas', titulo: 'Reservas', detalle: 'Reservas del sitio y su estado de pago' },
   { id: 'precios', titulo: 'Precios', detalle: 'Precio por noche, descuentos, códigos y calculadora' },
   { id: 'huespedes', titulo: 'Huéspedes y capacidad', detalle: 'Cobros adicionales y máximos por cabaña' },
   { id: 'calendario', titulo: 'Tarifas por calendario', detalle: 'Temporadas y precios por fecha' },
@@ -51,7 +53,7 @@ export default function AdminPage() {
   const [notas, setNotas] = useState('');
   const [formError, setFormError] = useState('');
 
-  const [pestana, setPestana] = useState<Pestana>('precios');
+  const [pestana, setPestana] = useState<Pestana>('reservas');
   const [precioNoche, setPrecioNoche] = useState<number | null>(null);
   const [precioInput, setPrecioInput] = useState('');
   const [precioMsg, setPrecioMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -241,7 +243,7 @@ export default function AdminPage() {
           </button>
         </div>
 
-        <nav className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8" aria-label="Secciones del panel">
+        <nav className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-8" aria-label="Secciones del panel">
           {PESTANAS.map((t) => (
             <button
               key={t.id}
@@ -257,6 +259,8 @@ export default function AdminPage() {
             </button>
           ))}
         </nav>
+
+        <ReservasAdmin visible={pestana === 'reservas'} />
 
         <div className={pestana === 'precios' ? 'grid grid-cols-1 lg:grid-cols-2 gap-8 items-start' : ''}>
         {/* Columna izquierda de Precios: precio base y, debajo, la calculadora de ganancia neta */}
@@ -312,7 +316,7 @@ export default function AdminPage() {
 
         {/* Columna derecha de Precios: descuentos por noches y, debajo, los códigos de descuento por celular */}
         <div className={pestana === 'precios' ? 'flex flex-col gap-8 min-w-0' : ''}>
-        <TarifasAdmin precioBase={precioNoche} precioFinSemana={precioFinSemana} seccion={pestana === 'disponibilidad' ? null : pestana} />
+        <TarifasAdmin precioBase={precioNoche} precioFinSemana={precioFinSemana} seccion={pestana === 'disponibilidad' || pestana === 'reservas' ? null : pestana} />
         <CodigosAdmin visible={pestana === 'precios'} />
         </div>
         </div>

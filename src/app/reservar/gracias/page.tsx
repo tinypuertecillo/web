@@ -21,7 +21,7 @@ function GraciasContent() {
                       <>
                                     <h1 className="font-serif text-2xl text-[#001f14]">¡Reserva confirmada!</h1>
                                     <p className="text-[#3a3a3a] text-sm">
-                                                    Tu pago fue procesado con éxito. Te enviaremos los detalles de tu estadía a tu correo electrónico.
+                                                    Tu pago fue procesado con éxito. Te enviamos la confirmación a tu correo electrónico; si no la ves, revisa tu carpeta de spam.
                                     </p>
                       </>
                     ) : rechazada ? (
