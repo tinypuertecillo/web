@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { barrasLinea, lunesDe, nombreCabana, pagosEnCurso, rangoFechas, type CabanaId } from '@/lib/panelUtils';
+import { barrasLinea, lunesDe, nombreMes, sumarDias, nombreCabana, pagosEnCurso, rangoFechas, type CabanaId } from '@/lib/panelUtils';
 import type { DatosPanel } from './useDatosPanel';
 import { Cabecera, Chip, Leyenda, LineaTiempo, useHoy } from './ui';
 
@@ -23,10 +23,14 @@ export default function CalendarioAdmin({ datos }: { datos: DatosPanel }) {
   const [msg, setMsg] = useState<Msg>(null);
   const [guardando, setGuardando] = useState(false);
 
+  // Semanas que se movió la línea de tiempo respecto de esta semana (0 = hoy)
+  const [semanas, setSemanas] = useState(0);
+  const inicio = hoy ? sumarDias(lunesDe(hoy), semanas * 7) : '';
+
   const barras = useMemo(() => {
     if (!hoy) return [];
-    return barrasLinea(bloqueos, pagosEnCurso(reservas, vigenteDesde, retencionMinutos, cargadoEn), lunesDe(hoy), 28);
-  }, [hoy, bloqueos, reservas, vigenteDesde, retencionMinutos, cargadoEn]);
+    return barrasLinea(bloqueos, pagosEnCurso(reservas, vigenteDesde, retencionMinutos, cargadoEn), inicio, 28);
+  }, [hoy, inicio, bloqueos, reservas, vigenteDesde, retencionMinutos, cargadoEn]);
 
   // Las fechas pasadas quedan al final: arriba lo que viene
   const lista = useMemo(() => {
@@ -95,10 +99,15 @@ export default function CalendarioAdmin({ datos }: { datos: DatosPanel }) {
 
       <section className="panel" aria-label="Ocupación de las dos Tiny">
         <div className="pan-head">
-          <div><h2>Próximas 4 semanas</h2></div>
-          <Leyenda />
+          <div><h2>{semanas === 0 ? 'Próximas 4 semanas' : '4 semanas desde el ' + Number(inicio.slice(8, 10)) + ' de ' + nombreMes(inicio)}</h2></div>
+          <div className="seg" role="group" aria-label="Mover el calendario">
+            <button type="button" onClick={() => setSemanas((s) => s - 4)} aria-label="4 semanas antes">‹ Anterior</button>
+            <button type="button" className={semanas === 0 ? 'on' : ''} onClick={() => setSemanas(0)}>Hoy</button>
+            <button type="button" onClick={() => setSemanas((s) => s + 4)} aria-label="4 semanas después">Siguiente ›</button>
+          </div>
         </div>
-        <LineaTiempo barras={barras} desde={lunesDe(hoy)} hoy={hoy} />
+        <div style={{ marginBottom: 14 }}><Leyenda /></div>
+        <LineaTiempo barras={barras} desde={inicio} hoy={hoy} />
       </section>
 
       <div className="two wl">

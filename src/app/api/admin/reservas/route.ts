@@ -24,3 +24,58 @@ export async function GET(req: NextRequest) {
   const limite = new Date(Date.now() - RETENCION_MINUTOS * 60 * 1000).toISOString();
   return NextResponse.json({ reservas: data ?? [], pendienteVigenteDesde: limite, retencionMinutos: RETENCION_MINUTOS });
 }
+
+// Elimina una reserva (pensado para limpiar las de prueba). Una que se está pagando ahora no se puede borrar,
+// y una pagada solo se borra si se confirma; en ese caso también se liberan sus fechas.
+export async function DELETE(req: NextRequest) {
+  if (!isValidSessionToken(req.cookies.get(ADMIN_COOKIE_NAME)?.value)) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+  const id = req.nextUrl.searchParams.get("id");
+  if (!id) {
+    return NextResponse.json({ error: "Falta id" }, { status: 400 });
+  }
+
+  const { data: r, error: errR } = await supabaseAdmin
+    .from("reservas")
+    .select("id, cabana_id, fecha_inicio, fecha_fin, estado, created_at")
+    .eq("id", id)
+    .maybeSingle();
+  if (errR) {
+    console.error(`[admin/reservas] ${errR.message}`);
+    return NextResponse.json({ error: "No se pudo revisar la reserva" }, { status: 500 });
+  }
+  if (!r) {
+    return NextResponse.json({ error: "Esa reserva ya no existe" }, { status: 404 });
+  }
+
+  const limite = Date.now() - RETENCION_MINUTOS * 60 * 1000;
+  if (r.estado === "pendiente" && new Date(r.created_at).getTime() >= limite) {
+    return NextResponse.json({ error: "Esta reserva se está pagando ahora. Espera unos minutos y vuelve a intentar." }, { status: 409 });
+  }
+  if (r.estado === "pagada" && req.nextUrl.searchParams.get("confirmarPagada") !== "1") {
+    return NextResponse.json({ error: "Esta reserva está pagada. Confirma que quieres eliminarla." }, { status: 409 });
+  }
+
+  // Una reserva pagada tiene su bloqueo de fechas (canal web): se libera junto con ella
+  if (r.estado === "pagada") {
+    const { error: errB } = await supabaseAdmin
+      .from("fechas_bloqueadas")
+      .delete()
+      .eq("cabana_id", r.cabana_id)
+      .eq("fecha_inicio", r.fecha_inicio)
+      .eq("fecha_fin", r.fecha_fin)
+      .eq("canal", "web");
+    if (errB) {
+      console.error(`[admin/reservas] ${errB.message}`);
+      return NextResponse.json({ error: "No se pudieron liberar las fechas. No se eliminó la reserva." }, { status: 500 });
+    }
+  }
+
+  const { error } = await supabaseAdmin.from("reservas").delete().eq("id", id);
+  if (error) {
+    console.error(`[admin/reservas] ${error.message}`);
+    return NextResponse.json({ error: "No se pudo eliminar la reserva. Intenta de nuevo." }, { status: 500 });
+  }
+  return NextResponse.json({ ok: true });
+}

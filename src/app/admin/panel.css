@@ -413,3 +413,9 @@
 /* Calendarios: colores funcionales, esquinas suaves */
 .adm .mcal .c{border-radius:9px;min-height:54px}
 .adm .bar{border-radius:8px;box-shadow:none}
+
+/* Botón de icono (eliminar) */
+.adm .icon-btn{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:8px;border:1px solid transparent;background:transparent;color:var(--mute);transition:background-color .15s,color .15s,border-color .15s}
+.adm .icon-btn svg{width:18px;height:18px}
+.adm .icon-btn:hover{background:#fdf1ee;color:#a63a2b;border-color:#ecc7bf}
+.adm .icon-btn:focus-visible{outline:3px solid #8fb5a3;outline-offset:2px}

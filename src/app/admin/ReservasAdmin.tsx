@@ -44,11 +44,34 @@ function situacion(r: ReservaPanel, vigenteDesde: string): Situacion {
   return dentroDeRetencion(r.created_at, vigenteDesde) ? 'pendiente' : 'sin_pagar';
 }
 
-// Reservas hechas en el sitio y su estado de pago. Solo muestra; no cambia nada.
+// Reservas hechas en el sitio y su estado de pago. Muestra el estado de pago y permite eliminar las de prueba.
 export default function ReservasAdmin({ datos }: { datos: DatosPanel }) {
   const { reservas, vigenteDesde, retencionMinutos } = datos;
   const [filtro, setFiltro] = useState<Filtro>('pagada');
   const [elegidaId, setElegidaId] = useState<string | null>(null);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  async function eliminar(r: ReservaPanel) {
+    const quien = `${r.huesped_nombre || 'Sin nombre'} (${rangoCorto(r.fecha_inicio, r.fecha_fin)})`;
+    const pagada = r.estado === 'pagada';
+    const pregunta = pagada
+      ? `La reserva de ${quien} está PAGADA. Si la eliminas se borra del registro y sus fechas quedan libres, pero el pago no se devuelve solo. Esto no se puede deshacer. ¿Eliminarla?`
+      : `¿Eliminar la reserva de ${quien}? Esto no se puede deshacer.`;
+    if (!confirm(pregunta)) return;
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/admin/reservas?id=${encodeURIComponent(r.id)}${pagada ? '&confirmarPagada=1' : ''}`, { method: 'DELETE' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMsg({ ok: false, text: data.error || 'No se pudo eliminar la reserva.' });
+        return;
+      }
+      setMsg({ ok: true, text: 'Reserva eliminada.' });
+      datos.recargar();
+    } catch {
+      setMsg({ ok: false, text: 'No se pudo conectar. Intenta de nuevo.' });
+    }
+  }
 
   const conteo = useMemo(() => {
     const c: Record<Filtro, number> = { todas: reservas.length, pagada: 0, pendiente: 0, sin_pagar: 0, rechazada: 0 };
@@ -67,6 +90,7 @@ export default function ReservasAdmin({ datos }: { datos: DatosPanel }) {
       </Cabecera>
 
       {datos.error && <div className="alert bad" role="alert"><b>{datos.error}</b></div>}
+      {msg && <div className={msg.ok ? 'msg-ok' : 'alert bad'} role={msg.ok ? 'status' : 'alert'}>{msg.ok ? msg.text : <b>{msg.text}</b>}</div>}
 
       <div className="seg" role="group" aria-label="Filtrar por estado">
         {FILTROS.map((f) => (
@@ -84,7 +108,7 @@ export default function ReservasAdmin({ datos }: { datos: DatosPanel }) {
             <div className="tbl-wrap" style={{ maxHeight: 640, overflowY: 'auto' }}>
               <table className="tbl">
                 <thead>
-                  <tr><th>Estado</th><th>Fechas</th><th>Cabaña</th><th>Huésped</th><th>Personas</th><th style={{ textAlign: 'right' }}>Total</th></tr>
+                  <tr><th>Estado</th><th>Fechas</th><th>Cabaña</th><th>Huésped</th><th>Personas</th><th style={{ textAlign: 'right' }}>Total</th><th aria-label="Acciones" /></tr>
                 </thead>
                 <tbody>
                   {lista.map((r) => {
@@ -102,6 +126,13 @@ export default function ReservasAdmin({ datos }: { datos: DatosPanel }) {
                         </td>
                         <td>{personas(r)}</td>
                         <td className="num">{fmtCLP(r.precio_total)}</td>
+                        <td style={{ width: 44, textAlign: 'right' }}>
+                          {e.clase !== 'wait' && (
+                            <button type="button" className="icon-btn" title="Eliminar reserva" aria-label={`Eliminar la reserva de ${r.huesped_nombre || 'sin nombre'}`} onClick={(ev) => { ev.stopPropagation(); eliminar(r); }}>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" /></svg>
+                            </button>
+                          )}
+                        </td>
                       </tr>
                     );
                   })}
@@ -151,6 +182,12 @@ export default function ReservasAdmin({ datos }: { datos: DatosPanel }) {
                 <dt>N.º de reserva</dt><dd>{elegida.id.slice(0, 8).toUpperCase()}</dd>
                 <dt>Creada</dt><dd>{fmtCreada(elegida.created_at)}</dd>
               </dl>
+              {est.clase !== 'wait' && (
+                <>
+                  <hr />
+                  <button type="button" className="btn danger" onClick={() => eliminar(elegida)}>Eliminar reserva</button>
+                </>
+              )}
             </aside>
           )}
         </div>
