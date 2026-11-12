@@ -21,6 +21,9 @@ type Fila = {
   email: string | null;
   canal: string;
   notas: string | null;
+  pers: string;
+  total: number | null;
+  raw: Bloqueo | null;
   sit: Situacion | null;
   web: ReservaPanel | null;
 };
@@ -57,6 +60,15 @@ function personas(r: ReservaPanel) {
   return p.join(', ');
 }
 
+function personasManual(b: Bloqueo) {
+  if (b.adultos === null || b.adultos === undefined) return '—';
+  const p = [plural(b.adultos, 'adulto', 'adultos')];
+  if (b.ninos) p.push(plural(b.ninos, 'niño', 'niños'));
+  if (b.bebes) p.push(plural(b.bebes, 'bebé', 'bebés'));
+  if (b.mascotas) p.push(plural(b.mascotas, 'mascota', 'mascotas'));
+  return p.join(', ');
+}
+
 // Una reserva "pendiente" se separa en dos: todavía dentro del tiempo para pagar, o ya vencida (no se pagó).
 function situacion(r: ReservaPanel, vigenteDesde: string): Situacion {
   if (r.estado === 'pagada') return 'pagada';
@@ -74,17 +86,17 @@ export default function ReservasAdmin({ datos }: { datos: DatosPanel }) {
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [editando, setEditando] = useState(false);
   const [guardando, setGuardando] = useState(false);
-  const [f, setF] = useState({ cabana: 'naciente' as CabanaId, desde: '', hasta: '', canal: 'airbnb', nombre: '', tel: '', email: '', notas: '' });
+  const [f, setF] = useState({ cabana: 'naciente' as CabanaId, desde: '', hasta: '', canal: 'airbnb', nombre: '', tel: '', email: '', notas: '', adultos: '', ninos: '', bebes: '', mascotas: '', valor: '' });
 
   const filas = useMemo<Fila[]>(() => {
     const web: Fila[] = reservas.map((r) => ({
       id: r.id, origen: 'web', cabana_id: r.cabana_id, fecha_inicio: r.fecha_inicio, fecha_fin: r.fecha_fin, noches: r.noches,
-      nombre: r.huesped_nombre, tel: r.huesped_telefono, email: r.huesped_email, canal: 'web', notas: null, sit: situacion(r, vigenteDesde), web: r,
+      nombre: r.huesped_nombre, tel: r.huesped_telefono, email: r.huesped_email, canal: 'web', notas: null, pers: personas(r), total: r.precio_total, raw: null, sit: situacion(r, vigenteDesde), web: r,
     }));
     // Los bloqueos de canal "web" son el calendario de una reserva pagada: ya aparecen arriba
     const manual: Fila[] = bloqueos.filter((b: Bloqueo) => b.canal !== 'web').map((b) => ({
       id: b.id, origen: 'manual', cabana_id: b.cabana_id, fecha_inicio: b.fecha_inicio, fecha_fin: b.fecha_fin, noches: nochesEntre(b.fecha_inicio, b.fecha_fin),
-      nombre: b.huesped_nombre, tel: b.huesped_telefono, email: b.huesped_email, canal: b.canal, notas: b.notas, sit: null, web: null,
+      nombre: b.huesped_nombre, tel: b.huesped_telefono, email: b.huesped_email, canal: b.canal, notas: b.notas, pers: personasManual(b), total: b.precio_total ?? null, raw: b, sit: null, web: null,
     }));
     return [...web, ...manual].sort((a, b) => (a.fecha_inicio < b.fecha_inicio ? 1 : a.fecha_inicio > b.fecha_inicio ? -1 : 0));
   }, [reservas, bloqueos, vigenteDesde]);
@@ -118,6 +130,9 @@ export default function ReservasAdmin({ datos }: { datos: DatosPanel }) {
       cabana: (x.cabana_id === 'poniente' ? 'poniente' : 'naciente') as CabanaId,
       desde: x.fecha_inicio, hasta: x.fecha_fin, canal: x.canal === 'web' ? 'airbnb' : x.canal,
       nombre: x.nombre ?? '', tel: x.tel ?? '', email: x.email ?? '', notas: x.notas ?? '',
+      adultos: x.raw?.adultos != null ? String(x.raw.adultos) : '', ninos: x.raw?.ninos != null ? String(x.raw.ninos) : '',
+      bebes: x.raw?.bebes != null ? String(x.raw.bebes) : '', mascotas: x.raw?.mascotas != null ? String(x.raw.mascotas) : '',
+      valor: x.raw?.precio_total != null ? String(x.raw.precio_total) : '',
     });
     setMsg(null);
     setEditando(true);
@@ -132,7 +147,7 @@ export default function ReservasAdmin({ datos }: { datos: DatosPanel }) {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(esManual
-          ? { id: x.id, cabanaId: f.cabana, fechaInicio: f.desde, fechaFin: f.hasta, canal: f.canal, huespedNombre: f.nombre, huespedTelefono: f.tel, huespedEmail: f.email, notas: f.notas }
+          ? { id: x.id, cabanaId: f.cabana, fechaInicio: f.desde, fechaFin: f.hasta, canal: f.canal, huespedNombre: f.nombre, huespedTelefono: f.tel, huespedEmail: f.email, notas: f.notas, adultos: f.adultos, ninos: f.ninos, bebes: f.bebes, mascotas: f.mascotas, precioTotal: f.valor }
           : { id: x.id, huespedNombre: f.nombre, huespedTelefono: f.tel, huespedEmail: f.email }),
       });
       const data = await res.json().catch(() => ({}));
@@ -174,7 +189,7 @@ export default function ReservasAdmin({ datos }: { datos: DatosPanel }) {
   }
 
   const estado = (x: Fila) => (x.sit ? <span className={`chip ${ETIQUETA[x.sit].clase}`}>{ETIQUETA[x.sit].texto}</span> : <Chip canal={x.canal} />);
-  const personasDe = (x: Fila) => (x.web ? personas(x.web) : '—');
+  const personasDe = (x: Fila) => x.pers;
 
   return (
     <>
@@ -216,7 +231,7 @@ export default function ReservasAdmin({ datos }: { datos: DatosPanel }) {
                         <small>{x.tel || ''}</small>
                       </td>
                       <td>{personasDe(x)}</td>
-                      <td className="num">{x.web ? fmtCLP(x.web.precio_total) : '—'}</td>
+                      <td className="num">{x.total !== null ? fmtCLP(x.total) : '—'}</td>
                       <td style={{ width: 80, textAlign: 'right', whiteSpace: 'nowrap' }}>
                         {x.sit !== 'pendiente' && (
                           <>
@@ -237,8 +252,8 @@ export default function ReservasAdmin({ datos }: { datos: DatosPanel }) {
             <div className="rcards">
               {lista.map((x) => (
                 <button type="button" key={x.id} className={`rcard ${elegida?.id === x.id ? 'sel' : ''}`} onClick={() => elegir(x.id)}>
-                  <span className="l1"><b>{x.nombre || 'Sin nombre'}</b><span className="tot">{x.web ? fmtCLP(x.web.precio_total) : etiquetaCanal(x.canal)}</span></span>
-                  <small>{nombreCabana(x.cabana_id)}, {rangoCorto(x.fecha_inicio, x.fecha_fin)}{x.web ? `, ${personas(x.web)}` : ''}</small>
+                  <span className="l1"><b>{x.nombre || 'Sin nombre'}</b><span className="tot">{x.total !== null ? fmtCLP(x.total) : etiquetaCanal(x.canal)}</span></span>
+                  <small>{nombreCabana(x.cabana_id)}, {rangoCorto(x.fecha_inicio, x.fecha_fin)}{x.pers !== '—' ? `, ${x.pers}` : ''}</small>
                   <span>{estado(x)}</span>
                 </button>
               ))}
@@ -258,7 +273,7 @@ export default function ReservasAdmin({ datos }: { datos: DatosPanel }) {
                     {elegida.web && (<><dt>Personas</dt><dd>{personas(elegida.web)}</dd></>)}
                     {elegida.web?.codigo_descuento && (<><dt>Código</dt><dd>{elegida.web.codigo_descuento}</dd></>)}
                     {elegida.web && (<><dt>{elegida.web.estado === 'pagada' ? 'Total pagado' : 'Total'}</dt><dd>{fmtCLP(elegida.web.precio_total)}</dd></>)}
-                    {!elegida.web && (<><dt>Canal</dt><dd>{etiquetaCanal(elegida.canal)}</dd></>)}
+                    {!elegida.web && (<><dt>Personas</dt><dd>{elegida.pers}</dd><dt>Canal</dt><dd>{etiquetaCanal(elegida.canal)}</dd><dt>Valor</dt><dd>{elegida.total !== null ? fmtCLP(elegida.total) : '—'}</dd></>)}
                   </dl>
                   <hr />
                   <dl className="kv">
@@ -327,6 +342,15 @@ export default function ReservasAdmin({ datos }: { datos: DatosPanel }) {
                     </>
                   ) : (
                     <div className="sub modal-ancho">Las fechas y el pago de una reserva hecha en la web no se cambian. Aquí corriges los datos del huésped.</div>
+                  )}
+                  {elegida.origen === 'manual' && (
+                    <>
+                      <div className="field"><label htmlFor="e-adu">Adultos</label><div className="inp"><input id="e-adu" type="number" min="0" inputMode="numeric" value={f.adultos} onChange={(e) => setF({ ...f, adultos: e.target.value })} /></div></div>
+                      <div className="field"><label htmlFor="e-nin">Niños</label><div className="inp"><input id="e-nin" type="number" min="0" inputMode="numeric" value={f.ninos} onChange={(e) => setF({ ...f, ninos: e.target.value })} /></div></div>
+                      <div className="field"><label htmlFor="e-beb">Bebés</label><div className="inp"><input id="e-beb" type="number" min="0" inputMode="numeric" value={f.bebes} onChange={(e) => setF({ ...f, bebes: e.target.value })} /></div></div>
+                      <div className="field"><label htmlFor="e-mas">Mascotas</label><div className="inp"><input id="e-mas" type="number" min="0" inputMode="numeric" value={f.mascotas} onChange={(e) => setF({ ...f, mascotas: e.target.value })} /></div></div>
+                      <div className="field modal-ancho"><label htmlFor="e-valor">Valor de la reserva (CLP)</label><div className="inp"><span>$</span><input id="e-valor" type="number" min="0" inputMode="numeric" value={f.valor} onChange={(e) => setF({ ...f, valor: e.target.value })} placeholder="Lo que pagó el huésped" /></div></div>
+                    </>
                   )}
                   <div className="field"><label htmlFor="e-nom">Nombre del huésped</label><div className="inp"><input id="e-nom" type="text" autoFocus value={f.nombre} onChange={(e) => setF({ ...f, nombre: e.target.value })} /></div></div>
                   <div className="field"><label htmlFor="e-cel">Celular</label><div className="inp"><input id="e-cel" type="tel" value={f.tel} onChange={(e) => setF({ ...f, tel: e.target.value })} /></div></div>
