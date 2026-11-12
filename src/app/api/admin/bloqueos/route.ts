@@ -16,6 +16,32 @@ function checkAuth(req: NextRequest) {
 const texto = (v: unknown, max: number) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null);
 const fmt = (f: string) => f.split("-").reverse().join("-");
 
+// Cantidad de huéspedes y valor de una reserva manual. Vacío = sin dato (null); algo inválido = error.
+const CAMPOS_EXTRA: { clave: string; columna: string; max: number; nombre: string }[] = [
+  { clave: "adultos", columna: "adultos", max: 50, nombre: "Adultos" },
+  { clave: "ninos", columna: "ninos", max: 50, nombre: "Niños" },
+  { clave: "bebes", columna: "bebes", max: 50, nombre: "Bebés" },
+  { clave: "mascotas", columna: "mascotas", max: 50, nombre: "Mascotas" },
+  { clave: "precioTotal", columna: "precio_total", max: 100000000, nombre: "El valor" },
+];
+function leerExtras(body: Record<string, unknown>): { datos: Record<string, number | null>; error?: string } {
+  const datos: Record<string, number | null> = {};
+  for (const c of CAMPOS_EXTRA) {
+    const v = body[c.clave];
+    if (v === undefined) continue;
+    if (v === null || v === "") {
+      datos[c.columna] = null;
+      continue;
+    }
+    const n = Number(v);
+    if (!Number.isInteger(n) || n < 0 || n > c.max) return { datos, error: `${c.nombre} no es válido. Usa un número entero desde 0.` };
+    datos[c.columna] = n;
+  }
+  return { datos };
+}
+const faltaColumna = (msg: string) => /column|schema cache/i.test(msg);
+const AVISO_COLUMNAS = "Falta activar los campos de huéspedes y valor en la base de datos (script supabase_reservas_manuales.sql).";
+
 export async function GET(req: NextRequest) {
   if (!checkAuth(req)) {
     return NextResponse.json({ error: "No autorizado" }, { status: 401 });
@@ -52,6 +78,12 @@ export async function POST(req: NextRequest) {
   if (!CANALES_MANUALES.includes(canal)) {
     return NextResponse.json({ error: "Canal no válido" }, { status: 400 });
   }
+  const extras = leerExtras(body);
+  if (extras.error) {
+    return NextResponse.json({ error: extras.error }, { status: 400 });
+  }
+  // Los campos vacíos no se envían: así el bloqueo simple funciona aunque la base aún no tenga esas columnas
+  const extrasConDato = Object.fromEntries(Object.entries(extras.datos).filter(([, v]) => v !== null));
 
   // No se bloquea encima de otra reserva o bloqueo de la misma cabaña
   const { data: choques, error: errChoques } = await supabaseAdmin
@@ -83,12 +115,14 @@ export async function POST(req: NextRequest) {
       huesped_telefono: texto(huespedTelefono, 40),
       huesped_email: texto(huespedEmail, 120),
       notas: texto(notas, 300),
+      ...extrasConDato,
     })
     .select()
     .single();
 
   if (error) {
     console.error(`[admin/bloqueos] ${error.message}`);
+    if (faltaColumna(error.message)) return NextResponse.json({ error: AVISO_COLUMNAS }, { status: 500 });
     return NextResponse.json({ error: "No se pudo bloquear la fecha. Intenta de nuevo." }, { status: 500 });
   }
   return NextResponse.json({ bloqueo: data });
@@ -149,6 +183,18 @@ export async function PATCH(req: NextRequest) {
     huesped_email: texto(huespedEmail, 120),
     notas: texto(notas, 300),
   };
+
+  // Huéspedes y valor: solo reservas manuales. Si la base aún no tiene las columnas, solo se rechaza si traen datos.
+  if (actual.canal !== "web") {
+    const extras = leerExtras(body);
+    if (extras.error) {
+      return NextResponse.json({ error: extras.error }, { status: 400 });
+    }
+    for (const [col, val] of Object.entries(extras.datos)) {
+      if (col in actual) cambio[col] = val;
+      else if (val !== null) return NextResponse.json({ error: AVISO_COLUMNAS }, { status: 500 });
+    }
+  }
 
   // Cabaña, fechas y canal solo se cambian en reservas manuales (Airbnb, Booking, otro); las pagadas por la web no.
   const quiereCambiarFechas = cabanaId !== undefined || fechaInicio !== undefined || fechaFin !== undefined || body.canal !== undefined;

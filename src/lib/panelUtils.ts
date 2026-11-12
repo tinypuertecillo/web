@@ -14,6 +14,12 @@ export type Bloqueo = {
   huesped_telefono: string | null;
   huesped_email: string | null;
   notas: string | null;
+  // Solo en reservas ingresadas a mano (Airbnb, Booking u otro)
+  adultos?: number | null;
+  ninos?: number | null;
+  bebes?: number | null;
+  mascotas?: number | null;
+  precio_total?: number | null;
 };
 
 export type ReservaPanel = {

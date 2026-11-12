@@ -20,6 +20,11 @@ export default function CalendarioAdmin({ datos }: { datos: DatosPanel }) {
   const [celular, setCelular] = useState('');
   const [correo, setCorreo] = useState('');
   const [notas, setNotas] = useState('');
+  const [adultos, setAdultos] = useState('');
+  const [ninos, setNinos] = useState('');
+  const [bebes, setBebes] = useState('');
+  const [mascotas, setMascotas] = useState('');
+  const [valor, setValor] = useState('');
   const [msg, setMsg] = useState<Msg>(null);
   const [guardando, setGuardando] = useState(false);
 
@@ -51,7 +56,7 @@ export default function CalendarioAdmin({ datos }: { datos: DatosPanel }) {
       const res = await fetch('/api/admin/bloqueos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cabanaId: cabana, fechaInicio: desde, fechaFin: hasta, canal, huespedNombre: nombre, huespedTelefono: celular, huespedEmail: correo, notas }),
+        body: JSON.stringify({ cabanaId: cabana, fechaInicio: desde, fechaFin: hasta, canal, huespedNombre: nombre, huespedTelefono: celular, huespedEmail: correo, notas, adultos, ninos, bebes, mascotas, precioTotal: valor }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -63,6 +68,11 @@ export default function CalendarioAdmin({ datos }: { datos: DatosPanel }) {
         setCelular('');
         setCorreo('');
         setNotas('');
+        setAdultos('');
+        setNinos('');
+        setBebes('');
+        setMascotas('');
+        setValor('');
         setMsg({ ok: true, text: 'Fechas bloqueadas.' });
         datos.recargar();
       }
@@ -142,6 +152,13 @@ export default function CalendarioAdmin({ datos }: { datos: DatosPanel }) {
               <div className="field"><label htmlFor="b-cel">Celular (opcional)</label><div className="inp"><input id="b-cel" type="tel" value={celular} onChange={(e) => setCelular(e.target.value)} /></div></div>
               <div className="field"><label htmlFor="b-mail">Correo (opcional)</label><div className="inp"><input id="b-mail" type="email" value={correo} onChange={(e) => setCorreo(e.target.value)} /></div></div>
             </div>
+            <div className="fgrid4">
+              <div className="field"><label htmlFor="b-adu">Adultos</label><div className="inp"><input id="b-adu" type="number" min="0" inputMode="numeric" value={adultos} onChange={(e) => setAdultos(e.target.value)} /></div></div>
+              <div className="field"><label htmlFor="b-nin">Niños</label><div className="inp"><input id="b-nin" type="number" min="0" inputMode="numeric" value={ninos} onChange={(e) => setNinos(e.target.value)} /></div></div>
+              <div className="field"><label htmlFor="b-beb">Bebés</label><div className="inp"><input id="b-beb" type="number" min="0" inputMode="numeric" value={bebes} onChange={(e) => setBebes(e.target.value)} /></div></div>
+              <div className="field"><label htmlFor="b-mas">Mascotas</label><div className="inp"><input id="b-mas" type="number" min="0" inputMode="numeric" value={mascotas} onChange={(e) => setMascotas(e.target.value)} /></div></div>
+            </div>
+            <div className="field"><label htmlFor="b-valor">Valor de la reserva (CLP)</label><div className="inp"><span>$</span><input id="b-valor" type="number" min="0" inputMode="numeric" value={valor} onChange={(e) => setValor(e.target.value)} placeholder="Lo que pagó el huésped" /></div></div>
             <div className="field"><label htmlFor="b-notas">Notas (opcional)</label><div className="inp"><input id="b-notas" type="text" value={notas} onChange={(e) => setNotas(e.target.value)} placeholder="Ej: reserva por Airbnb" /></div></div>
             <div className="foot">
               <button type="submit" className="btn pri" disabled={guardando}>{guardando ? 'Bloqueando…' : 'Bloquear fechas'}</button>
