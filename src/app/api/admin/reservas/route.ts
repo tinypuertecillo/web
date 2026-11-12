@@ -79,3 +79,39 @@ export async function DELETE(req: NextRequest) {
   }
   return NextResponse.json({ ok: true });
 }
+
+// Corrige los datos de contacto de una reserva hecha en la web (las fechas y el pago no se tocan).
+export async function PATCH(req: NextRequest) {
+  if (!isValidSessionToken(req.cookies.get(ADMIN_COOKIE_NAME)?.value)) {
+    return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+  }
+  const body = await req.json().catch(() => ({}));
+  const { id, huespedNombre, huespedTelefono, huespedEmail } = body;
+  if (!id) {
+    return NextResponse.json({ error: "Falta id" }, { status: 400 });
+  }
+  const t = (v: unknown, max: number) => (typeof v === "string" && v.trim() ? v.trim().slice(0, max) : null);
+  const datos = { huesped_nombre: t(huespedNombre, 120), huesped_telefono: t(huespedTelefono, 40), huesped_email: t(huespedEmail, 120) };
+
+  const { data, error } = await supabaseAdmin
+    .from("reservas")
+    .update(datos)
+    .eq("id", id)
+    .select("id, cabana_id, fecha_inicio, fecha_fin, estado")
+    .single();
+  if (error) {
+    console.error(`[admin/reservas] ${error.message}`);
+    return NextResponse.json({ error: "No se pudo guardar el cambio" }, { status: 500 });
+  }
+  // Si está pagada, el bloqueo de fechas de la web guarda una copia de los datos del huésped: se mantiene igual
+  if (data.estado === "pagada") {
+    await supabaseAdmin
+      .from("fechas_bloqueadas")
+      .update(datos)
+      .eq("cabana_id", data.cabana_id)
+      .eq("fecha_inicio", data.fecha_inicio)
+      .eq("fecha_fin", data.fecha_fin)
+      .eq("canal", "web");
+  }
+  return NextResponse.json({ ok: true });
+}
