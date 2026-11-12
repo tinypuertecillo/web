@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { calcularPrecio, esFechaValida, getCapacidades, PrecioNoConfiguradoError } from "@/lib/pricing";
 import { HUESPEDES_POR_DEFECTO, validarHuespedes } from "@/lib/pricingCore";
-import { normalizarCodigo, validarCodigoConLimite } from "@/lib/codigos";
+import { hoyChile, normalizarCodigo, validarCodigoConLimite } from "@/lib/codigos";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +11,9 @@ export async function POST(req: NextRequest) {
   const { fechaInicio, fechaFin, cabanaId, huespedes, codigo, celular } = await req.json().catch(() => ({}));
   if (!esFechaValida(fechaInicio) || !esFechaValida(fechaFin) || fechaFin <= fechaInicio) {
     return NextResponse.json({ error: "Rango de fechas inválido" }, { status: 400 });
+  }
+  if (fechaInicio < hoyChile()) {
+    return NextResponse.json({ error: "La fecha de llegada ya pasó. Elige una fecha desde hoy." }, { status: 400 });
   }
   const guests = huespedes ?? HUESPEDES_POR_DEFECTO;
   const capacidades = await getCapacidades();

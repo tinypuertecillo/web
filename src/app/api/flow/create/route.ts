@@ -3,7 +3,8 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { createFlowPayment } from "@/lib/flow";
 import { calcularPrecio, esFechaValida, getCapacidades, getMinNoches, PrecioNoConfiguradoError } from "@/lib/pricing";
 import { HUESPEDES_POR_DEFECTO, validarHuespedes } from "@/lib/pricingCore";
-import { normalizarCodigo, validarCodigoConLimite } from "@/lib/codigos";
+import { hoyChile, normalizarCodigo, validarCodigoConLimite } from "@/lib/codigos";
+import { RETENCION_MINUTOS } from "@/lib/retencion";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +33,10 @@ export async function POST(req: NextRequest) {
 
     if (!esFechaValida(fechaInicio) || !esFechaValida(fechaFin) || fechaFin <= fechaInicio) {
       return NextResponse.json({ error: "Rango de fechas inválido" }, { status: 400 });
+    }
+
+    if (fechaInicio < hoyChile()) {
+      return NextResponse.json({ error: "La fecha de llegada ya pasó. Elige una fecha desde hoy." }, { status: 400 });
     }
 
     if (cabanaId !== "naciente" && cabanaId !== "poniente") {
@@ -80,6 +85,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Esas fechas ya no están disponibles" }, { status: 409 });
     }
 
+    // Una reserva sin pagar retiene sus fechas por RETENCION_MINUTOS: mientras tanto nadie más puede
+    // iniciar un pago por las mismas fechas (evita que dos personas paguen la misma estadía).
+    // La misma persona (mismo correo) sí puede volver a intentarlo.
+    const correo = email.trim().toLowerCase();
+    const retenidasPorOtro = async (excluirId?: string) => {
+      const desde = new Date(Date.now() - RETENCION_MINUTOS * 60 * 1000).toISOString();
+      const { data, error } = await supabaseAdmin
+        .from("reservas")
+        .select("id, huesped_email, created_at")
+        .eq("cabana_id", cabanaId)
+        .eq("estado", "pendiente")
+        .gte("created_at", desde)
+        .lt("fecha_inicio", fechaFin)
+        .gt("fecha_fin", fechaInicio);
+      if (error) throw new Error(error.message);
+      return (data ?? []).filter((r) => r.id !== excluirId && String(r.huesped_email ?? "").trim().toLowerCase() !== correo);
+    };
+    const MSG_RETENIDA = "Otra persona está pagando esas fechas en este momento. Intenta de nuevo en unos minutos o elige otras fechas.";
+
+    if ((await retenidasPorOtro()).length > 0) {
+      return NextResponse.json({ error: MSG_RETENIDA }, { status: 409 });
+    }
+
     const filaReserva = {
       cabana_id: cabanaId,
       fecha_inicio: fechaInicio,
@@ -111,7 +139,17 @@ export async function POST(req: NextRequest) {
     }
 
     if (insertError || !reserva) {
-      return NextResponse.json({ error: insertError?.message || "No se pudo crear la reserva" }, { status: 500 });
+      console.error(`[flow/create] No se pudo guardar la reserva: ${insertError?.message}`);
+      return NextResponse.json({ error: "No se pudo crear la reserva. Intenta nuevamente." }, { status: 500 });
+    }
+
+    // Si dos personas enviaron el pago en el mismo instante, ambas pasaron la revisión anterior:
+    // se vuelve a mirar ya con la reserva guardada y solo sigue la que se creó primero.
+    const rivales = await retenidasPorOtro(reserva.id);
+    const llegoAntes = rivales.some((r) => r.created_at < reserva.created_at || (r.created_at === reserva.created_at && r.id < reserva.id));
+    if (llegoAntes) {
+      await supabaseAdmin.from("reservas").update({ estado: "rechazada" }).eq("id", reserva.id);
+      return NextResponse.json({ error: MSG_RETENIDA }, { status: 409 });
     }
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `${req.nextUrl.protocol}//${req.nextUrl.host}`;
@@ -124,6 +162,8 @@ export async function POST(req: NextRequest) {
         email,
         urlConfirmation: `${siteUrl}/api/flow/confirm`,
         urlReturn: `${siteUrl}/api/flow/return`,
+        // La orden vence en Flow junto con la retención de fechas: después ya no se puede pagar
+        timeoutSegundos: RETENCION_MINUTOS * 60,
       });
 
       await supabaseAdmin
@@ -134,6 +174,8 @@ export async function POST(req: NextRequest) {
       const redirectUrl = `${flowRes.url}?token=${flowRes.token}`;
       return NextResponse.json({ redirectUrl });
     } catch (flowError) {
+      // Sin orden en Flow la reserva no se puede pagar: no debe quedar pendiente ni reteniendo fechas
+      await supabaseAdmin.from("reservas").update({ estado: "rechazada" }).eq("id", reserva.id);
       const message = flowError instanceof Error ? flowError.message : "Error al conectar con Flow";
       return NextResponse.json({ error: message }, { status: 502 });
     }

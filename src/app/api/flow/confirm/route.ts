@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { getFlowStatus } from "@/lib/flow";
 import { usarCodigo } from "@/lib/codigos";
+import { enviarAvisoDueno, enviarConfirmacionHuesped } from "@/lib/correo";
 
 export const dynamic = "force-dynamic";
 
@@ -43,7 +44,16 @@ export async function POST(req: NextRequest) {
         return new NextResponse("Monto no coincide", { status: 409 });
       }
 
-      await supabaseAdmin.from("reservas").update({ estado: "pagada" }).eq("id", commerceOrder);
+      // El cambio a "pagada" solo lo hace un aviso: si dos avisos llegan a la vez, el segundo no encuentra
+      // nada que cambiar y termina aquí (así no se duplican el bloqueo, el uso del código ni los correos).
+      const { data: cambiadas, error: errCambio } = await supabaseAdmin
+        .from("reservas")
+        .update({ estado: "pagada" })
+        .eq("id", commerceOrder)
+        .neq("estado", "pagada")
+        .select("id");
+      if (errCambio) throw new Error(errCambio.message);
+      if (!cambiadas || cambiadas.length === 0) return new NextResponse("OK", { status: 200 });
 
       // Si la reserva usó un código de descuento, se descuenta un uso solo ahora que el pago está confirmado
       if (reserva.codigo_descuento) {
@@ -60,9 +70,11 @@ export async function POST(req: NextRequest) {
         .lt("fecha_inicio", reserva.fecha_fin)
         .gt("fecha_fin", reserva.fecha_inicio);
 
+      let conflicto = false;
       if (choques && choques.length > 0) {
         const esMismaOrden = choques.some((c) => String(c.notas ?? "").includes(`orden ${commerceOrder}`));
         if (!esMismaOrden) {
+          conflicto = true;
           console.error(`[flow/confirm] CONFLICTO DE FECHAS: la orden ${commerceOrder} se pagó pero esas fechas ya estaban bloqueadas. Requiere revisión manual.`);
         }
       } else {
@@ -77,6 +89,13 @@ export async function POST(req: NextRequest) {
           notas: `Reserva pagada vía Flow (orden ${commerceOrder})`,
         });
       }
+
+      // Correos: el pago ya quedó registrado, así que un fallo de envío no cambia la respuesta a Flow.
+      // Se espera el envío (en Vercel el proceso puede cortarse al responder) y cada uno falla por separado.
+      const aviso = await enviarAvisoDueno(reserva, conflicto);
+      // Con choque de fechas el huésped no recibe una confirmación que no se puede cumplir: el dueño lo resuelve primero.
+      const confirmacion = conflicto ? null : await enviarConfirmacionHuesped(reserva);
+      console.log(`[flow/confirm] Orden ${commerceOrder}: aviso al dueño ${aviso ? "enviado" : "NO enviado"}, confirmación al huésped ${conflicto ? "retenida por choque de fechas" : confirmacion ? "enviada" : "NO enviada"}.`);
     } else if (flowStatus === 3 || flowStatus === 4) {
       // Un aviso de rechazo tardío no debe pisar una reserva ya pagada
       if (reserva.estado !== "pagada") {

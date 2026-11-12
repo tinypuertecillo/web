@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import SiteHeader from '@/components/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 
 type Cabin = 'naciente' | 'poniente';
 
-type DateCell = { m: number; d: number };
+// Las fechas se manejan como texto AAAA-MM-DD (se comparan y ordenan como texto).
+type DateCell = string;
 
 type Huespedes = { adultos: number; ninos: number; bebes: number; mascotas: number };
 type Capacidad = { maxHuespedes: number; maxAdultos: number; maxNinos: number; maxBebes: number; maxMascotas: number };
@@ -44,29 +45,62 @@ const CABIN_LABEL: Record<Cabin, string> = {
   poniente: 'Tiny House Poniente',
 };
 
-const MONTHS = [
-  { m: 10, year: 2026, label: 'Octubre 2026', startWeekday: 3, days: 31 },
-  { m: 11, year: 2026, label: 'Noviembre 2026', startWeekday: 6, days: 30 },
-];
+// Cuántos meses hacia adelante muestra el calendario, contando el mes actual.
+const MESES_VISIBLES = 12;
+const NOMBRES_MES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+type Mes = { y: number; m: number; label: string; startWeekday: number; days: number };
+
+// Fecha de hoy en Chile (AAAA-MM-DD): los días anteriores no se pueden reservar.
+function hoyChile() {
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Santiago' });
+}
+
+function isoDe(y: number, m: number, d: number) {
+  return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
+function msDe(fecha: string) {
+  const [y, m, d] = fecha.split('-').map(Number);
+  return Date.UTC(y, m - 1, d);
+}
+
+// Los meses que se pueden reservar: desde el mes actual, siempre al día.
+function mesesDesde(hoy: string): Mes[] {
+  const [y0, m0] = hoy.split('-').map(Number);
+  const meses: Mes[] = [];
+  for (let i = 0; i < MESES_VISIBLES; i++) {
+    const primero = new Date(Date.UTC(y0, m0 - 1 + i, 1));
+    const y = primero.getUTCFullYear();
+    const m = primero.getUTCMonth() + 1;
+    meses.push({
+      y,
+      m,
+      label: `${NOMBRES_MES[m - 1]} ${y}`,
+      startWeekday: (primero.getUTCDay() + 6) % 7, // lunes = 0
+      days: new Date(Date.UTC(y, m, 0)).getUTCDate(),
+    });
+  }
+  return meses;
+}
 
 const WEEKDAY_LABELS = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
 
 const CARD = 'bg-white rounded-2xl p-6 md:p-7 shadow-[0_20px_40px_rgba(29,27,22,0.05)] flex flex-col gap-4';
 
-function keyOf(cell: DateCell) {
-  return cell.m * 100 + cell.d;
-}
-
-function dayIndex(cell: DateCell) {
-  return cell.m === 10 ? cell.d : 31 + cell.d;
+function nochesEntre(a: DateCell, b: DateCell) {
+  return Math.round((msDe(b) - msDe(a)) / DAY_MS);
 }
 
 function fmtCLP(n: number) {
   return '$' + n.toLocaleString('es-CL');
 }
 
-function monthShort(m: number) {
-  return m === 10 ? 'oct' : 'nov';
+// "2026-12-05" -> "5 dic 2026"
+function fmtDia(fecha: string) {
+  const [y, m, d] = fecha.split('-').map(Number);
+  return `${d} ${NOMBRES_MES[m - 1].slice(0, 3).toLowerCase()} ${y}`;
 }
 
 export default function ReservarPage() {
@@ -76,12 +110,16 @@ export default function ReservarPage() {
   const [checkOut, setCheckOut] = useState<DateCell | null>(null);
   const [hover, setHover] = useState<DateCell | null>(null);
   const [hoverCabin, setHoverCabin] = useState<Cabin | null>(null);
-  // Mes que muestra cada calendario (índice en MONTHS); por defecto noviembre
-  const [mesVista, setMesVista] = useState<Record<Cabin, number>>({ naciente: 1, poniente: 1 });
+  // La página se genera de antemano: la fecha de hoy se toma del navegador sin descuadrar la carga
+  const hoy = useSyncExternalStore(() => () => {}, hoyChile, hoyChile);
+  const MONTHS = useMemo(() => mesesDesde(hoy), [hoy]);
+  // Mes que muestra cada calendario (índice en MONTHS); parte en el mes actual
+  const [mesVista, setMesVista] = useState<Record<Cabin, number>>({ naciente: 0, poniente: 0 });
   const [guestName, setGuestName] = useState('');
   const [guestEmail, setGuestEmail] = useState('');
   const [guestPhone, setGuestPhone] = useState('');
-  const [blocked, setBlocked] = useState<Record<Cabin, Record<number, number[]>>>({ naciente: {}, poniente: {} });
+  const [blocked, setBlocked] = useState<Record<Cabin, Set<string>>>({ naciente: new Set(), poniente: new Set() });
+  const [disponibilidadError, setDisponibilidadError] = useState(false);
   const [loadingAvailability, setLoadingAvailability] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -111,21 +149,20 @@ export default function ReservarPage() {
     (async () => {
       try {
         const res = await fetch('/api/disponibilidad');
+        if (!res.ok) throw new Error('disponibilidad');
         const data = await res.json();
-        const next: Record<Cabin, Record<number, number[]>> = { naciente: {}, poniente: {} };
+        const next: Record<Cabin, Set<string>> = { naciente: new Set(), poniente: new Set() };
         for (const b of (data.bloqueos || []) as BloqueoApi[]) {
-          const start = new Date(b.fecha_inicio + 'T00:00:00');
-          const end = new Date(b.fecha_fin + 'T00:00:00');
-          for (let dt = new Date(start); dt < end; dt.setDate(dt.getDate() + 1)) {
-            const m = dt.getMonth() + 1;
-            const d = dt.getDate();
-            if (!next[b.cabana_id][m]) next[b.cabana_id][m] = [];
-            next[b.cabana_id][m].push(d);
+          if (!next[b.cabana_id]) continue;
+          // fecha_fin es el día de salida: esa noche queda libre
+          for (let ms = msDe(b.fecha_inicio); ms < msDe(b.fecha_fin); ms += DAY_MS) {
+            next[b.cabana_id].add(new Date(ms).toISOString().slice(0, 10));
           }
         }
         if (!cancelled) setBlocked(next);
       } catch {
-        // si falla, dejamos el calendario sin bloqueos conocidos en vez de romper la página
+        // No se muestra un calendario "todo libre" sin avisar: el servidor igual revisa las fechas al pagar
+        if (!cancelled) setDisponibilidadError(true);
       } finally {
         if (!cancelled) setLoadingAvailability(false);
       }
@@ -135,19 +172,12 @@ export default function ReservarPage() {
     };
   }, []);
 
-  const isBlockedIn = (c: Cabin, m: number, d: number) => (blocked[c][m] || []).includes(d);
-  const isBlocked = (m: number, d: number) => isBlockedIn(cabin, m, d);
+  // Un día no se puede elegir si está ocupado o si ya pasó
+  const isBlockedIn = (c: Cabin, fecha: DateCell) => blocked[c].has(fecha) || fecha < hoy;
 
   const hasBlockedBetween = (a: DateCell, b: DateCell) => {
-    let cur: DateCell = { m: a.m, d: a.d + 1 };
-    while (keyOf(cur) < keyOf(b)) {
-      const daysInM = cur.m === 10 ? 31 : 30;
-      if (cur.d > daysInM) {
-        cur = { m: 11, d: cur.d - daysInM };
-        continue;
-      }
-      if (isBlocked(cur.m, cur.d)) return true;
-      cur = { m: cur.m, d: cur.d + 1 };
+    for (let ms = msDe(a) + DAY_MS; ms < msDe(b); ms += DAY_MS) {
+      if (blocked[cabin].has(new Date(ms).toISOString().slice(0, 10))) return true;
     }
     return false;
   };
@@ -170,9 +200,8 @@ export default function ReservarPage() {
     });
   };
 
-  const pickDay = (c: Cabin, m: number, d: number) => {
-    if (isBlockedIn(c, m, d)) return;
-    const cell = { m, d };
+  const pickDay = (c: Cabin, cell: DateCell) => {
+    if (isBlockedIn(c, cell)) return;
     if (c !== cabin) {
       cambiarCabana(c);
       setCheckIn(cell);
@@ -183,11 +212,11 @@ export default function ReservarPage() {
       setCheckOut(null);
       return;
     }
-    if (keyOf(cell) > keyOf(checkIn)) {
+    if (cell > checkIn) {
       if (hasBlockedBetween(checkIn, cell)) {
         setCheckIn(cell);
         setCheckOut(null);
-      } else if (dayIndex(cell) - dayIndex(checkIn) < minNoches) {
+      } else if (nochesEntre(checkIn, cell) < minNoches) {
         // menos noches que la estadía mínima: se mantiene la llegada y se espera otra salida
         return;
       } else {
@@ -201,11 +230,11 @@ export default function ReservarPage() {
 
   const nights = useMemo(() => {
     if (!checkIn || !checkOut) return 0;
-    return dayIndex(checkOut) - dayIndex(checkIn);
+    return nochesEntre(checkIn, checkOut);
   }, [checkIn, checkOut]);
 
-  const fechaInicioISO = checkIn ? `2026-${String(checkIn.m).padStart(2, '0')}-${String(checkIn.d).padStart(2, '0')}` : '';
-  const fechaFinISO = checkOut ? `2026-${String(checkOut.m).padStart(2, '0')}-${String(checkOut.d).padStart(2, '0')}` : '';
+  const fechaInicioISO = checkIn ?? '';
+  const fechaFinISO = checkOut ?? '';
   const cap = capacidad[cabin];
   const quoteKey = checkIn && checkOut ? `${fechaInicioISO}|${fechaFinISO}|${cabin}|${guests.adultos}|${guests.ninos}|${guests.bebes}|${guests.mascotas}|${codigoAplicado}|${celularAplicado}` : '';
 
@@ -334,7 +363,7 @@ export default function ReservarPage() {
     }
   }
 
-  function buildMonthDays(c: Cabin, month: typeof MONTHS[number]) {
+  function buildMonthDays(c: Cabin, month: Mes) {
     // Solo el calendario de la Tiny elegida muestra la selección y la vista previa del rango
     const activa = c === cabin;
     const ci = activa ? checkIn : null;
@@ -355,7 +384,7 @@ export default function ReservarPage() {
 
     for (let i = 0; i < month.startWeekday; i++) {
       cells.push({
-        key: `blank-${c}-${month.m}-${i}`,
+        key: `blank-${c}-${month.y}-${month.m}-${i}`,
         label: '',
         disabled: true,
         blank: true,
@@ -370,15 +399,15 @@ export default function ReservarPage() {
     const effectiveEnd = co || hv;
 
     for (let d = 1; d <= month.days; d++) {
-      const cell = { m: month.m, d };
-      const blockedDay = isBlockedIn(c, month.m, d);
-      const isStart = !!ci && keyOf(cell) === keyOf(ci);
-      const isEnd = !!co && keyOf(cell) === keyOf(co);
-      const previewEnd = !co && !!hv && !!ci && keyOf(hv) > keyOf(ci);
-      const isHoverEnd = previewEnd && keyOf(cell) === keyOf(hv as DateCell);
+      const cell = isoDe(month.y, month.m, d);
+      const blockedDay = isBlockedIn(c, cell);
+      const isStart = !!ci && cell === ci;
+      const isEnd = !!co && cell === co;
+      const previewEnd = !co && !!hv && !!ci && hv > ci;
+      const isHoverEnd = previewEnd && cell === hv;
       let inRange = false;
-      if (ci && effectiveEnd && keyOf(effectiveEnd) > keyOf(ci)) {
-        inRange = keyOf(cell) > keyOf(ci) && keyOf(cell) < keyOf(effectiveEnd);
+      if (ci && effectiveEnd && effectiveEnd > ci) {
+        inRange = cell > ci && cell < effectiveEnd;
       }
       const isSelectedEdge = isStart || isEnd || isHoverEnd;
 
@@ -398,11 +427,11 @@ export default function ReservarPage() {
       }
 
       cells.push({
-        key: `${c}-${month.m}-${d}`,
+        key: `${c}-${cell}`,
         label: String(d),
         disabled: blockedDay,
         blank: false,
-        onClick: () => pickDay(c, month.m, d),
+        onClick: () => pickDay(c, cell),
         onMouseEnter: () => {
           if (!blockedDay) {
             setHover(cell);
@@ -491,10 +520,11 @@ export default function ReservarPage() {
         </div>
 
         <div className="flex items-center gap-x-5 gap-y-1 flex-wrap text-xs text-secondary mb-4">
-          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[#e7e2d9] inline-block" />Ocupado</span>
+          <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-[#e7e2d9] inline-block" />No disponible</span>
           <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-[#111111] inline-block" />Tus fechas</span>
           {minNoches > 1 && <span className="text-[#8a8a8a]">Estadía mínima: {minNoches} noches</span>}
           {loadingAvailability && <span className="text-[#8a8a8a]">Cargando disponibilidad…</span>}
+          {disponibilidadError && <span className="text-red-600">No pudimos cargar las fechas ocupadas. Recarga la página; la disponibilidad se confirma al pagar.</span>}
         </div>
 
         {/* Un calendario por Tiny, uno al lado del otro */}
@@ -511,8 +541,8 @@ export default function ReservarPage() {
 
             <div className="flex flex-col gap-2.5 pb-3.5">
               <div className="flex justify-between text-sm"><span className="text-[#3a3a3a]">Cabaña</span><span className="font-semibold">{checkIn ? CABIN_LABEL[cabin] : '—'}</span></div>
-              <div className="flex justify-between text-sm"><span className="text-[#3a3a3a]">Check-in</span><span className="font-semibold">{checkIn ? `${checkIn.d} ${monthShort(checkIn.m)} 2026` : '—'}</span></div>
-              <div className="flex justify-between text-sm"><span className="text-[#3a3a3a]">Check-out</span><span className="font-semibold">{checkOut ? `${checkOut.d} ${monthShort(checkOut.m)} 2026` : '—'}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-[#3a3a3a]">Check-in</span><span className="font-semibold">{checkIn ? fmtDia(checkIn) : '—'}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-[#3a3a3a]">Check-out</span><span className="font-semibold">{checkOut ? fmtDia(checkOut) : '—'}</span></div>
               <div className="flex justify-between text-sm"><span className="text-[#3a3a3a]">Noches</span><span className="font-semibold">{nights}</span></div>
             </div>
 
