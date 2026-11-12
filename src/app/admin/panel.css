@@ -419,3 +419,13 @@
 .adm .icon-btn svg{width:18px;height:18px}
 .adm .icon-btn:hover{background:#fdf1ee;color:#a63a2b;border-color:#ecc7bf}
 .adm .icon-btn:focus-visible{outline:3px solid #8fb5a3;outline-offset:2px}
+
+/* Ventana flotante para editar */
+.adm .modal-fondo{position:fixed;inset:0;z-index:100;background:rgba(20,35,28,.45);backdrop-filter:blur(2px);display:grid;place-items:center;padding:20px;overflow-y:auto}
+.adm .modal{background:#fff;border-radius:16px;box-shadow:0 24px 60px rgba(20,35,28,.3);width:100%;max-width:640px;max-height:calc(100vh - 40px);display:flex;flex-direction:column;overflow:hidden}
+.adm .modal-cab{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;padding:22px 24px 16px;border-bottom:1px solid var(--line)}
+.adm .modal-cab h2{margin:0;font:700 19px/1.2 var(--ui)}
+.adm .modal-cuerpo{padding:20px 24px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 18px;overflow-y:auto}
+.adm .modal-ancho{grid-column:1 / -1}
+.adm .modal-pie{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 24px;border-top:1px solid var(--line);background:#faf8f2;flex-wrap:wrap}
+@media (max-width:560px){.adm .modal-cuerpo{grid-template-columns:minmax(0,1fr)}.adm .modal-fondo{padding:10px}}
