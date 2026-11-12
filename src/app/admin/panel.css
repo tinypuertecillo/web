@@ -292,3 +292,124 @@
 .adm .code{font:700 22px var(--ui);letter-spacing:.04em;color:var(--forest-d)}
 .adm .totals .res.big{font-size:18px}
 @media (prefers-reduced-motion:no-preference){.adm .bar,.adm .btn{transition:opacity .15s}}
+
+/* ===== Pulido visual del panel (solo estilos, sin cambios de funciones) ===== */
+.adm{
+  --shadow-sm:0 1px 2px rgba(20,35,28,.05),0 1px 1px rgba(20,35,28,.03);
+  --shadow-md:0 2px 6px rgba(20,35,28,.06),0 8px 24px rgba(20,35,28,.05);
+  --ring:0 0 0 3px rgba(31,74,58,.18);
+  -webkit-font-smoothing:antialiased;
+}
+/* Tarjetas: borde fino + sombra suave en vez de caja plana */
+.adm .panel,.adm .kpis,.adm .rcard{box-shadow:var(--shadow-sm);border-color:#e7e3d8}
+.adm .panel{padding:26px 28px}
+.adm .pan-head{padding-bottom:16px;margin-bottom:20px;border-bottom:1px solid var(--line)}
+.adm .panel h2{letter-spacing:-.005em}
+.adm .panel .sub{font-size:13.5px;line-height:1.4}
+.adm .head{padding-bottom:4px}
+.adm .head h1{font-size:32px}
+
+/* Menú lateral */
+.adm .nav a,.adm .nav button{transition:background-color .15s,color .15s}
+.adm .nav a:hover:not(.on),.adm .nav button:hover:not(.on){background:rgba(255,255,255,.09);color:#fff}
+.adm .nav a.on,.adm .nav button.on{box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.adm .brand-mark{box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.adm .side-foot{border-top:1px solid rgba(255,255,255,.1);padding-top:16px}
+
+/* Botones: estados de pasar el mouse y presionar */
+.adm .btn{box-shadow:var(--shadow-sm);transition:background-color .15s,border-color .15s,box-shadow .15s,transform .05s}
+.adm .btn:hover:not(:disabled){background:#f7f5ee;border-color:#b9b29e}
+.adm .btn.pri:hover:not(:disabled){background:var(--forest-d);border-color:var(--forest-d)}
+.adm .btn:active:not(:disabled){transform:translateY(1px);box-shadow:none}
+.adm .btn.danger:hover:not(:disabled){background:#fdf1ee;border-color:#d99a8c}
+.adm .btn:focus-visible{outline:3px solid #8fb5a3;outline-offset:2px}
+.adm .seg a,.adm .seg button{transition:background-color .15s,border-color .15s}
+.adm .seg a:hover:not(.on),.adm .seg button:hover:not(.on){background:#f3f0e7;border-color:#d4cebd}
+
+/* Campos de formulario: foco claro y borde que reacciona */
+.adm .inp,.adm .tbl input,.adm .tbl select,.adm .cell{transition:border-color .15s,box-shadow .15s}
+.adm .inp:hover,.adm .tbl input:hover,.adm .tbl select:hover,.adm .cell:hover{border-color:#9c9582}
+.adm .inp:focus-within,.adm .tbl input:focus,.adm .tbl select:focus,.adm .cell:focus{border-color:var(--forest);box-shadow:var(--ring);outline:0}
+.adm .inp input:focus-visible,.adm .inp select:focus-visible{outline:0}
+.adm .field label{color:var(--ink)}
+.adm .field small{line-height:1.4}
+
+/* Tablas: encabezado con fondo, filas con hover, números alineados */
+.adm .tbl th{background:#f8f6ef;color:var(--ink2);font-size:12.5px;letter-spacing:.01em;border-bottom:1px solid #dcd7c8}
+.adm .tbl th:first-child{border-top-left-radius:10px}
+.adm .tbl th:last-child{border-top-right-radius:10px}
+.adm .tbl tbody tr{transition:background-color .12s}
+.adm .tbl tbody tr:hover td{background:#faf9f4}
+.adm .tbl tbody tr.sel:hover td{background:#e8f0ea}
+.adm .tbl tbody tr:last-child td{border-bottom:0}
+.adm .rcard{transition:border-color .15s,box-shadow .15s}
+.adm .rcard:hover{border-color:#cfc9b8;box-shadow:var(--shadow-md)}
+
+/* Listas y filas */
+.adm .item,.adm .row,.adm .ev{transition:background-color .12s}
+.adm .item{padding:14px 0}
+.adm .chip{letter-spacing:.005em}
+
+/* Vista previa y avisos */
+.adm .preview{box-shadow:var(--shadow-md)}
+.adm .alert{border:1px solid rgba(138,84,18,.15)}
+.adm .alert.bad{border-color:rgba(166,58,43,.2)}
+.adm .msg{border:1px solid #e9e5d8}
+.adm .msg-ok,.adm .msg-err{font-weight:600}
+
+/* Calendario y línea de tiempo */
+.adm .mcal .c{transition:box-shadow .12s,background-color .12s}
+.adm .bar{box-shadow:0 1px 2px rgba(0,0,0,.18)}
+.adm .tl-wrap{scrollbar-width:thin;scrollbar-color:#c9c3b1 transparent;padding-bottom:6px}
+.adm .skel{animation:admPulse 1.4s ease-in-out infinite}
+@keyframes admPulse{50%{opacity:.55}}
+
+/* Subnavegación */
+.adm .subnav button,.adm .subnav a{transition:background-color .15s}
+.adm .subnav button:hover:not(.on),.adm .subnav a:hover:not(.on){background:rgba(255,255,255,.7)}
+
+@media (max-width:900px){.adm .panel{padding:20px}}
+@media (prefers-reduced-motion:reduce){.adm *{transition:none !important;animation:none !important}}
+
+/* ===== Estilo SaaS minimalista premium: sans-serif uniforme, formularios compactos ===== */
+/* Una sola familia: los títulos y cifras dejan de usar serif */
+.adm{--serif:var(--font-manrope),system-ui,sans-serif;background:#f7f5f0}
+.adm .head h1{font-weight:700;font-size:28px;letter-spacing:-.02em}
+.adm .head p{font-size:14px}
+.adm .panel h2,.adm .preview h2{font-weight:700;font-size:17px;letter-spacing:-.01em}
+.adm .drawer h2{font-weight:700;font-size:19px}
+.adm .brand b{font-weight:700;font-size:16px;letter-spacing:-.01em}
+.adm .kpi strong,.adm .fig strong{font-weight:700;letter-spacing:-.02em}
+.adm .kpi strong{font-size:32px}
+.adm .day,.adm .rcard .tot,.adm .pl.tot,.adm .res.tot span:last-child{font-weight:700}
+.adm .hoy h1{font-weight:700;font-size:36px;letter-spacing:-.02em}
+.adm .group h3{font-weight:700;font-size:16px}
+
+/* Tarjetas más discretas */
+.adm .panel{padding:22px 24px;border-radius:14px}
+.adm .kpis,.adm .rcard{border-radius:14px}
+.adm .main{gap:22px}
+.adm .kpi{padding:18px 22px}
+
+/* Formularios compactos y ordenados */
+.adm .inp{min-height:42px;padding:0 12px;border-radius:9px;border-color:#cfc9b8}
+.adm .inp input{font-size:15px;font-weight:600}
+.adm .inp select{font-size:15px}
+.adm .field{gap:5px}
+.adm .field label{font-size:13px;font-weight:600}
+.adm .fields{gap:16px}
+.adm .tbl input,.adm .tbl select,.adm .cell{min-height:36px;font-size:14px;border-radius:8px;border-color:#cfc9b8}
+.adm .tbl td{padding:11px 12px}
+.adm .btn{min-height:40px;padding:8px 14px;font-size:13.5px;border-radius:9px}
+.adm .btn.sm{min-height:32px;padding:5px 11px;font-size:13px}
+.adm .seg a,.adm .seg button{min-height:36px;padding:7px 13px;font-size:13.5px}
+.adm .chip{font-size:11.5px;padding:2px 9px}
+
+/* Menú lateral sencillo */
+.adm .side{padding:22px 14px;gap:24px}
+.adm .nav a,.adm .nav button{min-height:40px;font-size:14px;border-radius:9px}
+.adm .nav a.on,.adm .nav button.on{box-shadow:none}
+
+/* Calendarios: colores funcionales, esquinas suaves */
+.adm .mcal .c{border-radius:9px;min-height:54px}
+.adm .bar{border-radius:8px;box-shadow:none}

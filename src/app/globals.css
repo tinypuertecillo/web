@@ -12,7 +12,7 @@
   --color-surface-tint: #2c5282;
 
   /* Madera color miel / Madera */
-  --color-secondary: #d2903e;
+  --color-secondary: #96621c; /* miel oscurecida: contraste AA sobre el fondo crema */
   --color-secondary-fixed: #fae2c1;
   --color-on-secondary-fixed: #4a2c08;
 
@@ -27,7 +27,6 @@
   
   --color-on-surface: #111111;
   --color-on-surface-variant: #3a3a3a;
-  --color-on-primary: #ffffff;
   --color-outline-variant: #b0c4de;
 
   --font-sans: var(--font-manrope);
@@ -39,4 +38,29 @@
 body {
   background: var(--color-surface);
   color: var(--color-on-surface);
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 6rem; /* el menú fijo no tapa los títulos al saltar a una sección */
+}
+
+/* Foco visible para quien navega con teclado */
+a:focus-visible,
+button:focus-visible {
+  outline: 3px solid #00d4bd;
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
