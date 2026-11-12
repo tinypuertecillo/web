@@ -1,54 +1,18 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-
-const CARD = 'w-full bg-white rounded-2xl p-7 shadow-[0_20px_40px_rgba(29,27,22,0.05)] flex flex-col gap-4';
-
-type Reserva = {
-  id: string;
-  cabana_id: string;
-  fecha_inicio: string;
-  fecha_fin: string;
-  noches: number;
-  precio_total: number;
-  huesped_nombre: string | null;
-  huesped_email: string | null;
-  huesped_telefono: string | null;
-  estado: string;
-  created_at: string;
-  adultos: number | null;
-  ninos: number | null;
-  bebes: number | null;
-  mascotas: number | null;
-  codigo_descuento: string | null;
-};
+import React, { useMemo, useState } from 'react';
+import { dentroDeRetencion, fechaCompleta, nombreCabana, plural, rangoCorto, type ReservaPanel } from '@/lib/panelUtils';
+import type { DatosPanel } from './useDatosPanel';
+import { Cabecera, fmtCLP } from './ui';
 
 type Filtro = 'todas' | 'pagada' | 'pendiente' | 'sin_pagar' | 'rechazada';
+type Situacion = Exclude<Filtro, 'todas'>;
 
-const CABIN_LABEL: Record<string, string> = {
-  naciente: 'Tiny House Naciente',
-  poniente: 'Tiny House Poniente',
-};
-
-const fmtCLP = (n: number) => '$' + Number(n).toLocaleString('es-CL');
-const fmtFecha = (f: string) => f.split('-').reverse().join('-');
-const fmtCreada = (iso: string) => {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? '' : d.toLocaleString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'America/Santiago' });
-};
-
-// "pendiente" se separa en dos: todavía dentro del tiempo para pagar, o ya vencida (no se pagó).
-function situacion(r: Reserva, vigenteDesde: string): Exclude<Filtro, 'todas'> {
-  if (r.estado === 'pagada') return 'pagada';
-  if (r.estado === 'rechazada') return 'rechazada';
-  return r.created_at >= vigenteDesde ? 'pendiente' : 'sin_pagar';
-}
-
-const ETIQUETA: Record<Exclude<Filtro, 'todas'>, { texto: string; clase: string }> = {
-  pagada: { texto: 'Pagada', clase: 'bg-[#e4efe9] text-[#163428]' },
-  pendiente: { texto: 'Pagando ahora', clase: 'bg-amber-50 text-amber-800' },
-  sin_pagar: { texto: 'No se pagó', clase: 'bg-[#eee7da] text-[#8a8a8a]' },
-  rechazada: { texto: 'Rechazada', clase: 'bg-red-50 text-red-700' },
+const ETIQUETA: Record<Situacion, { texto: string; clase: string }> = {
+  pagada: { texto: 'Pagada', clase: 'ok' },
+  pendiente: { texto: 'Pagando ahora', clase: 'wait' },
+  sin_pagar: { texto: 'No se pagó', clase: 'no' },
+  rechazada: { texto: 'Rechazada', clase: 'bad' },
 };
 
 const FILTROS: { id: Filtro; titulo: string }[] = [
@@ -59,57 +23,32 @@ const FILTROS: { id: Filtro; titulo: string }[] = [
   { id: 'todas', titulo: 'Todas' },
 ];
 
-function huespedesTexto(r: Reserva) {
+const fmtCreada = (iso: string) => {
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleString('es-CL', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'America/Santiago' });
+};
+
+function personas(r: ReservaPanel) {
   if (r.adultos === null || r.adultos === undefined) return '—';
-  const partes = [`${r.adultos} ad.`];
-  if (r.ninos) partes.push(`${r.ninos} niñ.`);
-  if (r.bebes) partes.push(`${r.bebes} beb.`);
-  if (r.mascotas) partes.push(`${r.mascotas} masc.`);
-  return partes.join(' · ');
+  const p = [plural(r.adultos, 'adulto', 'adultos')];
+  if (r.ninos) p.push(plural(r.ninos, 'niño', 'niños'));
+  if (r.bebes) p.push(plural(r.bebes, 'bebé', 'bebés'));
+  if (r.mascotas) p.push(plural(r.mascotas, 'mascota', 'mascotas'));
+  return p.join(', ');
+}
+
+// Una reserva "pendiente" se separa en dos: todavía dentro del tiempo para pagar, o ya vencida (no se pagó).
+function situacion(r: ReservaPanel, vigenteDesde: string): Situacion {
+  if (r.estado === 'pagada') return 'pagada';
+  if (r.estado === 'rechazada') return 'rechazada';
+  return dentroDeRetencion(r.created_at, vigenteDesde) ? 'pendiente' : 'sin_pagar';
 }
 
 // Reservas hechas en el sitio y su estado de pago. Solo muestra; no cambia nada.
-export default function ReservasAdmin({ visible }: { visible: boolean }) {
-  const [reservas, setReservas] = useState<Reserva[]>([]);
-  const [vigenteDesde, setVigenteDesde] = useState('');
-  const [retencion, setRetencion] = useState<number | null>(null);
+export default function ReservasAdmin({ datos }: { datos: DatosPanel }) {
+  const { reservas, vigenteDesde, retencionMinutos } = datos;
   const [filtro, setFiltro] = useState<Filtro>('pagada');
-  const [cargando, setCargando] = useState(false);
-  const [error, setError] = useState('');
-
-  type Respuesta = { ok: boolean; error?: string; reservas?: Reserva[]; pendienteVigenteDesde?: string; retencionMinutos?: number };
-
-  const pedir = useCallback(async (): Promise<Respuesta> => {
-    try {
-      const res = await fetch('/api/admin/reservas');
-      const data = await res.json().catch(() => ({}));
-      return { ...data, ok: res.ok };
-    } catch {
-      return { ok: false };
-    }
-  }, []);
-
-  const aplicar = useCallback((data: Respuesta) => {
-    if (!data.ok) {
-      setError(data.error || 'No se pudieron cargar las reservas');
-    } else {
-      setError('');
-      setReservas(data.reservas || []);
-      setVigenteDesde(data.pendienteVigenteDesde || '');
-      setRetencion(typeof data.retencionMinutos === 'number' ? data.retencionMinutos : null);
-    }
-    setCargando(false);
-  }, []);
-
-  const cargar = () => {
-    setCargando(true);
-    pedir().then(aplicar);
-  };
-
-  // Se cargan cada vez que se abre la pestaña, para ver siempre lo último
-  useEffect(() => {
-    if (visible) pedir().then(aplicar);
-  }, [visible, pedir, aplicar]);
+  const [elegidaId, setElegidaId] = useState<string | null>(null);
 
   const conteo = useMemo(() => {
     const c: Record<Filtro, number> = { todas: reservas.length, pagada: 0, pendiente: 0, sin_pagar: 0, rechazada: 0 };
@@ -117,89 +56,105 @@ export default function ReservasAdmin({ visible }: { visible: boolean }) {
     return c;
   }, [reservas, vigenteDesde]);
 
-  const lista = useMemo(
-    () => (filtro === 'todas' ? reservas : reservas.filter((r) => situacion(r, vigenteDesde) === filtro)),
-    [reservas, filtro, vigenteDesde]
-  );
-
-  if (!visible) return null;
+  const lista = useMemo(() => (filtro === 'todas' ? reservas : reservas.filter((r) => situacion(r, vigenteDesde) === filtro)), [reservas, filtro, vigenteDesde]);
+  const elegida = lista.find((r) => r.id === elegidaId) ?? lista[0] ?? null;
+  const est = elegida ? ETIQUETA[situacion(elegida, vigenteDesde)] : null;
 
   return (
-    <div className={CARD}>
-      <div className="flex items-start justify-between flex-wrap gap-3">
-        <div>
-          <h2 className="font-serif text-xl text-[#001f14]">Reservas del sitio</h2>
-          <div className="text-[11px] text-[#8a8a8a] mt-1">
-            Reservas hechas en la página, con su pago en Flow. Las de Airbnb y Booking no aparecen aquí: se bloquean en «Disponibilidad».
-            {retencion !== null && ` Una reserva sin pagar retiene sus fechas por ${retencion} minutos.`}
-          </div>
-        </div>
-        <button type="button" onClick={cargar} disabled={cargando} className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#eee7da] text-[#3a3a3a] hover:bg-[#e5dbcd] disabled:opacity-50">
-          {cargando ? 'Actualizando…' : 'Actualizar'}
-        </button>
-      </div>
+    <>
+      <Cabecera titulo="Reservas" ayuda="Las hechas en la página. Las de Airbnb y Booking se bloquean en Calendario.">
+        <button type="button" className="btn" onClick={datos.recargar}>Actualizar</button>
+      </Cabecera>
 
-      <div className="flex flex-wrap gap-2">
+      {datos.error && <div className="alert bad" role="alert"><b>{datos.error}</b></div>}
+
+      <div className="seg" role="group" aria-label="Filtrar por estado">
         {FILTROS.map((f) => (
-          <button
-            key={f.id}
-            type="button"
-            onClick={() => setFiltro(f.id)}
-            aria-pressed={filtro === f.id}
-            className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${filtro === f.id ? 'bg-[#163428] text-white' : 'bg-[#eee7da] text-[#3a3a3a] hover:bg-[#e5dbcd]'}`}
-          >
-            {f.titulo} ({conteo[f.id]})
+          <button key={f.id} type="button" className={filtro === f.id ? 'on' : ''} aria-pressed={filtro === f.id} onClick={() => setFiltro(f.id)}>
+            {f.titulo}<i>{conteo[f.id]}</i>
           </button>
         ))}
       </div>
 
-      {error && <div className="text-sm text-red-600">{error}</div>}
-      {!error && !cargando && lista.length === 0 && <div className="text-sm text-[#8a8a8a]">No hay reservas en esta lista.</div>}
-
-      {lista.length > 0 && (
-        <div className="overflow-x-auto max-h-[640px] overflow-y-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="sticky top-0 bg-white">
-              <tr className="text-[11px] uppercase tracking-wide text-secondary">
-                <th className="py-2 pr-4 font-bold">Estado</th>
-                <th className="py-2 pr-4 font-bold">Llegada</th>
-                <th className="py-2 pr-4 font-bold">Salida</th>
-                <th className="py-2 pr-4 font-bold">Noches</th>
-                <th className="py-2 pr-4 font-bold">Cabaña</th>
-                <th className="py-2 pr-4 font-bold">Huésped</th>
-                <th className="py-2 pr-4 font-bold">Contacto</th>
-                <th className="py-2 pr-4 font-bold">Personas</th>
-                <th className="py-2 pr-4 font-bold text-right">Total</th>
-                <th className="py-2 pr-4 font-bold">Código</th>
-                <th className="py-2 font-bold">Creada</th>
-              </tr>
-            </thead>
-            <tbody>
+      {lista.length === 0 ? (
+        <section className="panel"><div className="sub">No hay reservas en esta lista.</div></section>
+      ) : (
+        <div className="split">
+          <section className="panel" style={{ padding: '8px 12px' }} aria-label="Lista de reservas">
+            <div className="tbl-wrap" style={{ maxHeight: 640, overflowY: 'auto' }}>
+              <table className="tbl">
+                <thead>
+                  <tr><th>Estado</th><th>Fechas</th><th>Cabaña</th><th>Huésped</th><th>Personas</th><th style={{ textAlign: 'right' }}>Total</th></tr>
+                </thead>
+                <tbody>
+                  {lista.map((r) => {
+                    const e = ETIQUETA[situacion(r, vigenteDesde)];
+                    return (
+                      <tr key={r.id} className={elegida?.id === r.id ? 'sel' : ''} onClick={() => setElegidaId(r.id)} style={{ cursor: 'pointer' }}>
+                        <td><span className={`chip ${e.clase}`}>{e.texto}</span></td>
+                        <td>{rangoCorto(r.fecha_inicio, r.fecha_fin)}<small>{plural(r.noches, 'noche', 'noches')}</small></td>
+                        <td>{nombreCabana(r.cabana_id)}</td>
+                        <td>
+                          <button type="button" className="link" style={{ textDecoration: 'none', color: 'inherit', textAlign: 'left' }} onClick={() => setElegidaId(r.id)} aria-label={`Ver el detalle de la reserva de ${r.huesped_nombre || 'sin nombre'}`}>
+                            {r.huesped_nombre || 'Sin nombre'}
+                          </button>
+                          <small>{r.huesped_telefono || ''}</small>
+                        </td>
+                        <td>{personas(r)}</td>
+                        <td className="num">{fmtCLP(r.precio_total)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <div className="rcards">
               {lista.map((r) => {
                 const e = ETIQUETA[situacion(r, vigenteDesde)];
                 return (
-                  <tr key={r.id} className="border-t border-[#eee7da] align-top">
-                    <td className="py-2.5 pr-4"><span className={`inline-block rounded-full px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap ${e.clase}`}>{e.texto}</span></td>
-                    <td className="py-2.5 pr-4 whitespace-nowrap">{fmtFecha(r.fecha_inicio)}</td>
-                    <td className="py-2.5 pr-4 whitespace-nowrap">{fmtFecha(r.fecha_fin)}</td>
-                    <td className="py-2.5 pr-4">{r.noches}</td>
-                    <td className="py-2.5 pr-4 whitespace-nowrap">{CABIN_LABEL[r.cabana_id] || r.cabana_id}</td>
-                    <td className="py-2.5 pr-4">{r.huesped_nombre || '—'}</td>
-                    <td className="py-2.5 pr-4 text-xs text-[#3a3a3a]">
-                      <div>{r.huesped_telefono || '—'}</div>
-                      <div className="text-[#8a8a8a]">{r.huesped_email || ''}</div>
-                    </td>
-                    <td className="py-2.5 pr-4 whitespace-nowrap text-xs">{huespedesTexto(r)}</td>
-                    <td className="py-2.5 pr-4 text-right font-semibold whitespace-nowrap">{fmtCLP(r.precio_total)}</td>
-                    <td className="py-2.5 pr-4 whitespace-nowrap text-xs">{r.codigo_descuento || '—'}</td>
-                    <td className="py-2.5 whitespace-nowrap text-xs text-[#8a8a8a]">{fmtCreada(r.created_at)}</td>
-                  </tr>
+                  <button type="button" key={r.id} className={`rcard ${elegida?.id === r.id ? 'sel' : ''}`} onClick={() => setElegidaId(r.id)}>
+                    <span className="l1"><b>{r.huesped_nombre || 'Sin nombre'}</b><span className="tot">{fmtCLP(r.precio_total)}</span></span>
+                    <small>{nombreCabana(r.cabana_id)}, {rangoCorto(r.fecha_inicio, r.fecha_fin)}, {personas(r)}</small>
+                    <span><span className={`chip ${e.clase}`}>{e.texto}</span></span>
+                  </button>
                 );
               })}
-            </tbody>
-          </table>
+            </div>
+          </section>
+
+          {elegida && est && (
+            <aside className="panel drawer" aria-label="Detalle de la reserva">
+              <span className={`chip ${est.clase}`}>{est.texto}</span>
+              <h2 style={{ marginTop: 10 }}>{elegida.huesped_nombre || 'Sin nombre'}</h2>
+              <div style={{ color: 'var(--mute)', fontSize: 14 }}>Tiny House {nombreCabana(elegida.cabana_id)}, {plural(elegida.noches, 'noche', 'noches')}</div>
+              <hr />
+              <dl className="kv">
+                <dt>Llegada</dt><dd>{fechaCompleta(elegida.fecha_inicio).replace(/^./, (c) => c.toUpperCase())}</dd>
+                <dt>Salida</dt><dd>{fechaCompleta(elegida.fecha_fin).replace(/^./, (c) => c.toUpperCase())}</dd>
+                <dt>Personas</dt><dd>{personas(elegida)}</dd>
+                {elegida.codigo_descuento && (<><dt>Código</dt><dd>{elegida.codigo_descuento}</dd></>)}
+                <dt>{elegida.estado === 'pagada' ? 'Total pagado' : 'Total'}</dt><dd>{fmtCLP(elegida.precio_total)}</dd>
+              </dl>
+              <hr />
+              <dl className="kv">
+                <dt>Celular</dt><dd>{elegida.huesped_telefono || '—'}</dd>
+                <dt>Correo</dt><dd style={{ overflowWrap: 'anywhere' }}>{elegida.huesped_email || '—'}</dd>
+              </dl>
+              <hr />
+              <dl className="kv">
+                <dt>Pago</dt>
+                <dd>
+                  {elegida.estado === 'pagada' && 'Confirmado por Flow'}
+                  {elegida.estado === 'rechazada' && 'Rechazado por Flow'}
+                  {elegida.estado === 'pendiente' && (est.clase === 'wait' ? `En curso: tiene ${retencionMinutos} minutos para pagar` : 'No se completó el pago')}
+                </dd>
+                <dt>N.º de reserva</dt><dd>{elegida.id.slice(0, 8).toUpperCase()}</dd>
+                <dt>Creada</dt><dd>{fmtCreada(elegida.created_at)}</dd>
+              </dl>
+            </aside>
+          )}
         </div>
       )}
-    </div>
+    </>
   );
 }
