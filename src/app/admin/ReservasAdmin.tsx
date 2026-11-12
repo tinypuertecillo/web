@@ -248,7 +248,6 @@ export default function ReservasAdmin({ datos }: { datos: DatosPanel }) {
           {elegida && (
             <aside className="panel drawer" aria-label="Detalle de la reserva">
               {estado(elegida)}
-              {!editando ? (
                 <>
                   <h2 style={{ marginTop: 10 }}>{elegida.nombre || 'Sin nombre'}</h2>
                   <div style={{ color: 'var(--mute)', fontSize: 14 }}>Tiny House {nombreCabana(elegida.cabana_id)}, {plural(elegida.noches, 'noche', 'noches')}</div>
@@ -293,9 +292,22 @@ export default function ReservasAdmin({ datos }: { datos: DatosPanel }) {
                     </>
                   )}
                 </>
-              ) : (
-                <form onSubmit={(e) => { e.preventDefault(); guardar(elegida); }} className="stk" style={{ marginTop: 12 }}>
-                  <h2>Editar reserva</h2>
+            </aside>
+          )}
+
+          {elegida && editando && (
+            <div className="modal-fondo" onMouseDown={(e) => { if (e.target === e.currentTarget) { setEditando(false); setMsg(null); } }}>
+              <form className="modal" role="dialog" aria-modal="true" aria-labelledby="e-titulo" onSubmit={(e) => { e.preventDefault(); guardar(elegida); }} onKeyDown={(e) => { if (e.key === 'Escape') { setEditando(false); setMsg(null); } }}>
+                <div className="modal-cab">
+                  <div>
+                    <h2 id="e-titulo">Editar reserva</h2>
+                    <div className="sub">{elegida.nombre || 'Sin nombre'}, Tiny House {nombreCabana(elegida.cabana_id)}</div>
+                  </div>
+                  <button type="button" className="icon-btn" aria-label="Cerrar" onClick={() => { setEditando(false); setMsg(null); }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                  </button>
+                </div>
+                <div className="modal-cuerpo">
                   {elegida.origen === 'manual' ? (
                     <>
                       <div className="field">
@@ -306,32 +318,32 @@ export default function ReservasAdmin({ datos }: { datos: DatosPanel }) {
                           ))}
                         </div>
                       </div>
-                      <div className="fields">
-                        <div className="field"><label htmlFor="e-desde">Desde</label><div className="inp"><input id="e-desde" type="date" value={f.desde} onChange={(e) => setF({ ...f, desde: e.target.value })} /></div></div>
-                        <div className="field"><label htmlFor="e-hasta">Hasta</label><div className="inp"><input id="e-hasta" type="date" value={f.hasta} onChange={(e) => setF({ ...f, hasta: e.target.value })} /></div></div>
-                      </div>
                       <div className="field">
                         <label htmlFor="e-canal">Canal</label>
                         <div className="inp"><select id="e-canal" value={f.canal} onChange={(e) => setF({ ...f, canal: e.target.value })}><option value="airbnb">Airbnb</option><option value="booking">Booking</option><option value="otro">Otro</option></select></div>
                       </div>
+                      <div className="field"><label htmlFor="e-desde">Llegada</label><div className="inp"><input id="e-desde" type="date" value={f.desde} onChange={(e) => setF({ ...f, desde: e.target.value })} /></div></div>
+                      <div className="field"><label htmlFor="e-hasta">Salida</label><div className="inp"><input id="e-hasta" type="date" value={f.hasta} onChange={(e) => setF({ ...f, hasta: e.target.value })} /></div></div>
                     </>
                   ) : (
-                    <div className="sub">Las fechas y el pago de una reserva hecha en la web no se cambian. Aquí corriges los datos del huésped.</div>
+                    <div className="sub modal-ancho">Las fechas y el pago de una reserva hecha en la web no se cambian. Aquí corriges los datos del huésped.</div>
                   )}
-                  <div className="field"><label htmlFor="e-nom">Nombre del huésped</label><div className="inp"><input id="e-nom" type="text" value={f.nombre} onChange={(e) => setF({ ...f, nombre: e.target.value })} /></div></div>
+                  <div className="field"><label htmlFor="e-nom">Nombre del huésped</label><div className="inp"><input id="e-nom" type="text" autoFocus value={f.nombre} onChange={(e) => setF({ ...f, nombre: e.target.value })} /></div></div>
                   <div className="field"><label htmlFor="e-cel">Celular</label><div className="inp"><input id="e-cel" type="tel" value={f.tel} onChange={(e) => setF({ ...f, tel: e.target.value })} /></div></div>
                   <div className="field"><label htmlFor="e-mail">Correo</label><div className="inp"><input id="e-mail" type="email" value={f.email} onChange={(e) => setF({ ...f, email: e.target.value })} /></div></div>
                   {elegida.origen === 'manual' && (
-                    <div className="field"><label htmlFor="e-notas">Notas</label><div className="inp"><input id="e-notas" type="text" value={f.notas} onChange={(e) => setF({ ...f, notas: e.target.value })} /></div></div>
+                    <div className="field"><label htmlFor="e-notas">Notas</label><div className="inp"><input id="e-notas" type="text" value={f.notas} onChange={(e) => setF({ ...f, notas: e.target.value })} placeholder="Ej: reserva por Booking" /></div></div>
                   )}
-                  {msg && !msg.ok && <div className="msg-err" role="alert">{msg.text}</div>}
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    <button type="submit" className="btn pri" disabled={guardando}>{guardando ? 'Guardando…' : 'Guardar cambios'}</button>
+                </div>
+                <div className="modal-pie">
+                  {msg && !msg.ok ? <span className="msg-err" role="alert">{msg.text}</span> : <span />}
+                  <div style={{ display: 'flex', gap: 8 }}>
                     <button type="button" className="btn" onClick={() => { setEditando(false); setMsg(null); }}>Cancelar</button>
+                    <button type="submit" className="btn pri" disabled={guardando}>{guardando ? 'Guardando…' : 'Guardar cambios'}</button>
                   </div>
-                </form>
-              )}
-            </aside>
+                </div>
+              </form>
+            </div>
           )}
         </div>
       )}
